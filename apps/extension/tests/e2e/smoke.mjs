@@ -174,7 +174,7 @@ try {
   // 5c. ClickFix fake CAPTCHA: the copied PowerShell command is swapped before it reaches the clipboard.
   {
     const page = await visit('captcha-verify-human.online', 1200);
-    await page.click('#verify');
+    await page.click('#cap');
     await page.waitForTimeout(1500);
     const { verdict } = await tabState(page);
     await shot(page, '11-clickfix');

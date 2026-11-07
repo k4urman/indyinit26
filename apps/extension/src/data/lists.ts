@@ -63,6 +63,7 @@ export const PHRASES = {
     'gift card', 'google play card', 'itunes card', 'apple gift card', 'steam card', 'scratch the back',
     'send the card number', 'send a photo of the card', 'bitcoin atm', 'crypto atm', 'wire transfer only',
     'western union', 'moneygram', 'pay with zelle only', 'zelle only', 'crypto only', 'payment via bitcoin only',
+    'scratch off the back', 'enter the card number', 'buy gift cards', 'purchase gift cards', 'reveal the code',
   ],
   prize: [
     'you have won', "you've won", 'congratulations you', 'claim your prize', 'claim your reward', 'selected winner',

@@ -1,11 +1,72 @@
 <!doctype html>
-<!-- Control fixture: ordinary small shop checkout. Served as grannys-quilts.shop. Should NOT be blocked at Balanced. -->
-<html><head><title>Granny's Quilts - Checkout</title></head>
-<body style="font-family:sans-serif;max-width:480px;margin:40px auto">
-<h1>Checkout</h1>
-<p>Handmade quilt, queen size: $180.00. Shipping $8.00. Thank you for supporting a small business!</p>
-<form id="pay">
-  <label for="cc">Card number</label><br><input id="cc" name="cardnumber" autocomplete="cc-number"><br><br>
-  <button>Pay $188.00</button>
-</form>
+<!-- DEMO FIXTURE — not a real site. Served locally as grannys-quilts.shop: an honest small shop
+     (the control). Sentinel should NOT warn here at Balanced. Nothing leaves this machine. -->
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Secure Checkout · Granny's Quilts</title>
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  body { font-family: "Nunito Sans", "Helvetica Neue", Arial, sans-serif; color: #44403a; background: #faf6ef; }
+  .top { background: #fff; border-bottom: 1px solid #ece4d6; padding: 14px 0; }
+  .top .in { max-width: 920px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; }
+  .brand { font-family: Georgia, serif; font-size: 24px; color: #8a6d3b; font-weight: 700; }
+  .brand small { display: block; font-size: 11px; font-style: italic; color: #b09b76; letter-spacing: .5px; }
+  .secure { font-size: 12px; color: #5c8a4a; display: flex; align-items: center; gap: 6px; }
+  .main { max-width: 920px; margin: 32px auto; padding: 0 24px; display: grid; grid-template-columns: 1fr 360px; gap: 32px; align-items: start; }
+  h1 { font-family: Georgia, serif; font-size: 26px; color: #3a332c; margin-bottom: 4px; }
+  .step { font-size: 13px; color: #a08e6f; margin-bottom: 20px; }
+  .card { background: #fff; border: 1px solid #ece4d6; border-radius: 10px; padding: 22px 24px; box-shadow: 0 1px 3px rgba(80,60,20,.05); }
+  label { display: block; font-size: 12.5px; color: #7a6f5d; margin: 14px 0 5px; font-weight: 600; }
+  input { width: 100%; height: 44px; border: 1px solid #d8cdb8; border-radius: 6px; padding: 0 12px; font-size: 16px; background: #fffdf9; }
+  input:focus { outline: 0; border-color: #8a6d3b; box-shadow: 0 0 0 2px rgba(138,109,59,.15); }
+  .cols { display: flex; gap: 12px; } .cols > div { flex: 1; }
+  button { width: 100%; height: 50px; background: #6a8c4e; color: #fff; border: 0; border-radius: 25px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 20px; }
+  button:hover { background: #5c7d42; }
+  .summary h2 { font-family: Georgia, serif; font-size: 18px; margin-bottom: 16px; }
+  .prod { display: flex; gap: 14px; align-items: center; padding-bottom: 16px; border-bottom: 1px solid #f0e9db; }
+  .thumb { width: 72px; height: 72px; border-radius: 8px; flex: none; background:
+    repeating-linear-gradient(45deg, #c9876b 0 12px, #e8c4a0 12px 24px),
+    repeating-linear-gradient(-45deg, rgba(122,90,140,.5) 0 12px, transparent 12px 24px);
+    background-blend-mode: multiply; border: 2px solid #fff; box-shadow: 0 0 0 1px #e0d4bf; }
+  .prod .n { font-size: 15px; font-weight: 700; } .prod .m { font-size: 12.5px; color: #a08e6f; }
+  .line { display: flex; justify-content: space-between; font-size: 14.5px; padding: 8px 0; }
+  .total { display: flex; justify-content: space-between; font-size: 18px; font-weight: 800; padding-top: 12px; border-top: 1px solid #f0e9db; margin-top: 4px; color: #3a332c; }
+  .badges { display: flex; gap: 14px; justify-content: center; margin-top: 16px; font-size: 11px; color: #a08e6f; }
+  footer { text-align: center; font-size: 12px; color: #b09b76; padding: 24px; }
+  @media (max-width: 720px) { .main { grid-template-columns: 1fr; } }
+</style></head>
+<body>
+<div class="top"><div class="in"><div class="brand">Granny's Quilts<small>HANDMADE IN VERMONT · SINCE 1998</small></div><div class="secure">🔒 Secure checkout</div></div></div>
+<div class="main">
+  <div>
+    <h1>Checkout</h1>
+    <div class="step">Step 2 of 3 · Payment</div>
+    <div class="card">
+      <form>
+        <label for="name">Name on card</label>
+        <input id="name" autocomplete="cc-name">
+        <label for="cc">Card number</label>
+        <input id="cc" name="cardnumber" autocomplete="cc-number" inputmode="numeric" placeholder="1234 5678 9012 3456">
+        <div class="cols">
+          <div><label for="e">Expiry</label><input id="e" autocomplete="cc-exp" placeholder="MM / YY"></div>
+          <div><label for="c">CVC</label><input id="c" autocomplete="cc-csc" inputmode="numeric" placeholder="123"></div>
+        </div>
+        <label for="zip">Billing ZIP</label>
+        <input id="zip" autocomplete="postal-code" inputmode="numeric" style="max-width:160px">
+        <button type="submit">Pay $188.00</button>
+      </form>
+    </div>
+  </div>
+  <div class="summary">
+    <div class="card">
+      <h2>Order summary</h2>
+      <div class="prod"><div class="thumb"></div><div><div class="n">“Autumn Leaves” Quilt</div><div class="m">Queen · 90" × 90" · hand-stitched</div></div></div>
+      <div class="line"><span>Subtotal</span><span>$180.00</span></div>
+      <div class="line"><span>Shipping (3–5 days)</span><span>$8.00</span></div>
+      <div class="line"><span>Tax</span><span>$0.00</span></div>
+      <div class="total"><span>Total</span><span>$188.00</span></div>
+      <div class="badges"><span>✓ 30-day returns</span><span>✓ Free gift wrap</span></div>
+    </div>
+  </div>
+</div>
+<footer>Thank you for supporting a small family business. © 2026 Granny's Quilts · This is a demonstration page.</footer>
 </body></html>

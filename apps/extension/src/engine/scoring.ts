@@ -212,9 +212,10 @@ export function scorePage(input: ScoreInput): ScoreResult {
     }
     if (f.seed > 0 && !trustedName) floor = Math.max(floor, 70);
     if (b.clipboardCommand) floor = Math.max(floor, 90);
-    // A bank, company or agency asking for gift cards is always a scam (FTC).
-    if (gift >= 2 && (pretends || result.flags.impersonating)) floor = Math.max(floor, 85);
-    if (invest >= 2 && (cryptoAddr || b.walletRequest)) floor = Math.max(floor, 60);
+    // Gift cards plus impersonation, or plus threats/urgency, is a scam (FTC): no agency or
+    // company takes gift cards, and legit gift-card retail never pairs with "final notice".
+    if (gift >= 2 && (pretends || result.flags.impersonating || urgency >= 2)) floor = Math.max(floor, 85);
+    if (invest >= 2 && (cryptoAddr || b.walletRequest || DEPOSIT_RE.test(text))) floor = Math.max(floor, 60);
 
     // --- Elements to highlight ---------------------------------------------
     for (const el of page.elements) {

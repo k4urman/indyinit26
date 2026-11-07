@@ -1,13 +1,49 @@
 <!doctype html>
-<!-- Demo fixture: delivery fee smishing landing page. Served as usps-redelivery.top. -->
-<html><head><title>USPS - Package on hold</title></head>
-<body style="font-family:sans-serif;max-width:480px;margin:40px auto">
-<header><img alt="USPS" src="usps-logo.png" width="100" height="30"></header>
-<h1>USPS Tracking</h1>
-<p>Your package is on hold due to an incomplete address. Pay a $1.99 redelivery fee to schedule delivery. Final notice: the parcel will be returned within 48 hours.</p>
-<form id="pay">
-  <label for="cc">Card number</label><br><input id="cc" name="cardnumber" autocomplete="cc-number"><br>
-  <label for="exp">Expiry</label><br><input id="exp" name="exp" autocomplete="cc-exp"><br><br>
-  <button>Pay $1.99</button>
-</form>
+<!-- DEMO FIXTURE — not a real site. Served locally as usps-redelivery.top to show Sentinel
+     catching a delivery-fee smishing page. Submits nowhere; no data leaves this machine. -->
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>USPS® - Redelivery</title>
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  body { font-family: "Helvetica Neue", Arial, sans-serif; color: #333366; background: #fff; }
+  .top { background: #333366; color: #fff; height: 52px; display: flex; align-items: center; padding: 0 22px; font-weight: 700; letter-spacing: .5px; }
+  .top .eagle { color: #fff; font-size: 20px; }
+  .top .eagle b { color: #e21833; }
+  .strip { background: #e21833; height: 5px; }
+  .wrap { max-width: 480px; margin: 0 auto; padding: 24px 20px 48px; }
+  .track { background: #f7f7f9; border: 1px solid #e1e1e8; border-radius: 6px; padding: 16px 18px; font-size: 13.5px; }
+  .track .no { font-family: monospace; font-size: 15px; color: #333366; }
+  .status { color: #b00020; font-weight: 600; margin-top: 4px; }
+  h1 { font-size: 21px; margin: 24px 0 8px; }
+  p.lead { font-size: 15px; line-height: 1.5; color: #444; }
+  .fee { background: #fff7e6; border: 1px solid #f0c674; border-radius: 6px; padding: 12px 16px; margin: 18px 0; font-size: 15px; }
+  .fee b { font-size: 18px; color: #b00020; }
+  label { display: block; font-size: 13px; color: #555; margin: 14px 0 5px; }
+  input { width: 100%; height: 42px; border: 1px solid #b4b4be; border-radius: 4px; padding: 0 12px; font-size: 16px; }
+  .cols { display: flex; gap: 12px; }
+  button { width: 100%; height: 46px; background: #333366; color: #fff; border: 0; border-radius: 4px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 18px; }
+  footer { font-size: 11px; color: #9a9aa6; margin-top: 26px; line-height: 1.5; }
+</style></head>
+<body>
+<div class="top"><span class="eagle">USPS<b>®</b></span></div>
+<div class="strip"></div>
+<div class="wrap">
+  <div class="track">
+    Tracking number <span class="no">9400 1000 0000 0000 0000 00</span>
+    <div class="status">Delivery attempt failed — action required</div>
+  </div>
+  <h1>Schedule a Redelivery</h1>
+  <p class="lead">Your package is on hold at our facility due to an incomplete delivery address. To schedule redelivery, a small fee is required to cover handling. Final notice: the parcel will be returned to sender within 48 hours.</p>
+  <div class="fee">Redelivery fee: <b>$1.99</b></div>
+  <form>
+    <label for="cc">Card number</label>
+    <input id="cc" name="cardnumber" autocomplete="cc-number" inputmode="numeric">
+    <div class="cols">
+      <div style="flex:1"><label for="e">Expiry</label><input id="e" name="exp" autocomplete="cc-exp" placeholder="MM/YY"></div>
+      <div style="flex:1"><label for="c">CVV</label><input id="c" name="cvc" autocomplete="cc-csc" inputmode="numeric"></div>
+    </div>
+    <button type="submit">Pay $1.99 &amp; schedule redelivery</button>
+  </form>
+  <footer>The United States Postal Service® is an independent agency of the executive branch of the U.S. federal government. This is a demonstration page.</footer>
+</div>
 </body></html>

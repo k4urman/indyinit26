@@ -21,6 +21,31 @@ npm run lint:firefox   # Mozilla's add-on validator on the Firefox build
 npm run demo           # live demo: fixture scam pages + browser with the extension
 npm run eval -- <openphish.txt> <phishing-db.txt> <tranco.zip>   # URL-only metrics → eval/results.md
 ```
+npm run zip            # installable packages → .output/*.zip (chrome + firefox)
+```
+
+## Install it (as a real extension)
+
+Build the packages:
+
+```bash
+npm install && npm run zip
+```
+
+This writes `.output/sentinel-extension-<version>-chrome.zip` and `-firefox.zip`.
+
+**Chrome / Edge / Brave** — unpacked (for yourself or a judge):
+1. Unzip the chrome package (or just use the built `.output/chrome-mv3` folder).
+2. Open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked**, pick that folder.
+Pin Sentinel to the toolbar. After any rebuild, click the reload icon on its card.
+
+**Firefox** — `about:debugging#/runtime/this-firefox` → **Load Temporary Add-on** → pick
+`.output/firefox-mv3/manifest.json` (or any file inside the unzipped firefox package).
+
+**Publishing to the stores** (optional, needs developer accounts): upload the chrome zip to the
+[Chrome Web Store](https://chrome.google.com/webstore/devconsole) and the firefox zip to
+[Firefox Add-ons](https://addons.mozilla.org/developers/). `npm run zip` also emits a
+`-sources.zip` for Mozilla's source-code review.
 
 `npm run e2e` needs a Chromium that still accepts `--load-extension` (branded Chrome 137+
 doesn't). Get one with `npx playwright-core install chromium` and point `CHROME=` at it.

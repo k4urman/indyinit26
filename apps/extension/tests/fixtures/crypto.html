@@ -1,11 +1,52 @@
 <!doctype html>
-<!-- Demo fixture: fake investment platform. Served as quantum-ai-profits.live. -->
-<html><head><title>Quantum AI Trading Platform</title></head>
-<body style="font-family:sans-serif;max-width:560px;margin:40px auto">
-<h1>Quantum AI Trading</h1>
-<p>Guaranteed returns: 3% daily profit with our AI trading bot. Minimum deposit $250. Withdraw anytime.</p>
-<p>Your earnings: <b>$12,480.22</b> (profit has been credited)</p>
-<p>Deposit USDT to: 0x52908400098527886E0F7030069857D2E4169EE7</p>
-<button id="connect">Connect Wallet</button>
-<form><label for="amt">Deposit amount</label> <input id="amt"> <button>Deposit</button></form>
+<!-- DEMO FIXTURE — not a real site. Served locally as quantum-ai-profits.live to show Sentinel
+     flagging a fake investment platform. No wallet, no payment; nothing leaves this machine. -->
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quantum AI — Automated Trading</title>
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  body { font-family: "Inter", "Segoe UI", sans-serif; background: #0d1117; color: #e6edf3; }
+  .nav { display: flex; align-items: center; justify-content: space-between; padding: 14px 26px; border-bottom: 1px solid #222b36; }
+  .nav .brand { font-weight: 800; font-size: 19px; color: #35e08a; letter-spacing: -.3px; }
+  .nav .brand span { color: #e6edf3; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 36px 22px; }
+  .hd { font-size: 14px; color: #8b98a5; }
+  .bal { font-size: 46px; font-weight: 800; letter-spacing: -1px; margin-top: 4px; }
+  .up { color: #35e08a; font-size: 15px; font-weight: 600; margin-top: 2px; }
+  .grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin: 26px 0; }
+  .card { background: #161b22; border: 1px solid #222b36; border-radius: 10px; padding: 16px; }
+  .card .k { font-size: 12px; color: #8b98a5; } .card .v { font-size: 22px; font-weight: 700; margin-top: 4px; } .card .v.g { color: #35e08a; }
+  .promo { background: linear-gradient(90deg, rgba(53,224,138,.12), transparent); border: 1px solid #1f6f47; border-radius: 10px; padding: 18px 20px; font-size: 15px; line-height: 1.5; }
+  .promo b { color: #35e08a; }
+  .deposit { background: #161b22; border: 1px solid #222b36; border-radius: 10px; padding: 20px; margin-top: 20px; }
+  .deposit label { font-size: 13px; color: #8b98a5; display: block; margin-bottom: 6px; }
+  .deposit .addr { font-family: monospace; font-size: 13px; background: #0d1117; border: 1px solid #222b36; border-radius: 6px; padding: 10px; color: #c9d1d9; word-break: break-all; }
+  .row { display: flex; gap: 10px; margin-top: 14px; }
+  input { flex: 1; height: 44px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; color: #e6edf3; padding: 0 12px; font-size: 16px; }
+  button { height: 44px; padding: 0 22px; border: 0; border-radius: 6px; font-weight: 700; cursor: pointer; }
+  .connect { background: #2f81f7; color: #fff; }
+  .dep { background: #35e08a; color: #06240f; }
+</style></head>
+<body>
+<div class="nav"><div class="brand">Quantum<span>AI</span></div><div style="font-size:13px;color:#8b98a5">Welcome back, investor</div></div>
+<div class="wrap">
+  <div class="hd">Portfolio value</div>
+  <div class="bal">$12,480.22</div>
+  <div class="up">▲ +3.00% today · profit has been credited</div>
+  <div class="grid">
+    <div class="card"><div class="k">Today's profit</div><div class="v g">+$374.40</div></div>
+    <div class="card"><div class="k">AI win rate</div><div class="v">98.7%</div></div>
+    <div class="card"><div class="k">VIP level</div><div class="v">Gold</div></div>
+  </div>
+  <div class="promo"><b>Guaranteed returns.</b> Our AI trading bot delivers <b>3% daily profit</b>, automatically. Risk-free. Withdraw anytime. Minimum deposit to activate: $250. Join 2 million investors growing their wealth on autopilot.</div>
+  <div class="deposit">
+    <label>Deposit USDT (TRC-20) to activate your bot</label>
+    <div class="addr">TJ9xq4Wd1a2Bc3De4Fg5Hh6Jk7Lm8Np9Qr</div>
+    <div class="row">
+      <input placeholder="Amount in USD (min. 250)">
+      <button class="connect" id="connect">Connect Wallet</button>
+      <button class="dep">Deposit</button>
+    </div>
+  </div>
+</div>
 </body></html>
