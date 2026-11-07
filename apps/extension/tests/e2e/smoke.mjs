@@ -191,9 +191,10 @@ try {
       const page = await ctx.newPage();
       await page.goto(`http://${host}:${PORT}/`).catch(() => {});
       await page.waitForTimeout(1500);
-      // blocked.html is the frontend's; until it lands the redirect ends on an error page, so check the record.
-      const blocks = await sw.evaluate(async () => Object.entries(await chrome.storage.session.get(null)).filter(([k]) => k.startsWith('block:')).map(([, v]) => v.originalUrl));
-      check('known-bad: redirected to blocked page', blocks.some((u) => u.includes(host)), page.url());
+      check('known-bad: redirected to blocked page', /blocked\.html\?id=/.test(page.url()), page.url());
+      const text = await page.locator('body').innerText();
+      check('blocked page: shows the reason', /known scam/i.test(text), text.slice(0, 80).replace(/\s+/g, ' '));
+      await shot(page, '8-blocked-page');
       await page.close();
     } else {
       console.log('SKIP  known-bad (set KNOWN_BAD_HOST to a host from the feed)');
@@ -207,6 +208,17 @@ try {
     const r = await ext.evaluate(() => chrome.runtime.sendMessage({ type: 'checkUrl', url: 'paypa1.com/signin' }));
     check('checkUrl: lookalike flagged', r?.ok && r.data.reasons[0]?.title.includes('PayPal'), JSON.stringify(r?.data?.reasons?.[0]?.title));
     const stats = await ext.evaluate(() => chrome.storage.local.get('stats'));
+    // Settings page and popup render against the real background.
+    await ext.goto(sw.url().replace('background.js', 'options.html'));
+    await ext.waitForTimeout(1200);
+    const opts = await ext.locator('body').innerText();
+    check('settings page: history from getLog', /chase-secure-verify\.com/.test(opts), `${opts.length} chars`);
+    await shot(ext, '9-settings');
+    await ext.setViewportSize({ width: 380, height: 640 });
+    await ext.goto(sw.url().replace('background.js', 'popup.html'));
+    await ext.waitForTimeout(1000);
+    await shot(ext, '10-popup');
+    check('popup renders', /ScamShield/.test(await ext.locator('body').innerText()));
     check('stats counted', (stats.stats?.blocked?.page ?? 0) >= 2, JSON.stringify(stats.stats?.blocked));
     await ext.close();
   }

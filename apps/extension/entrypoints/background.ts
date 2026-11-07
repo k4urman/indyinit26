@@ -327,7 +327,14 @@ async function handleUi(req: Request): Promise<ResponseFor<Request>> {
       await clearLog();
       return { ok: true };
     case 'reportMistake': {
-      const e = await getEvent(req.eventId);
+      // The blocked page only knows its block id; accept that too.
+      const rec = (await session.get(blockKey(req.eventId)))[blockKey(req.eventId)] as BlockRecord | undefined;
+      const e = await getEvent(rec?.eventId || req.eventId);
+      if (!e && rec) {
+        const p = parseUrl(rec.originalUrl);
+        if (p) await setListEntry(p.domain, 'allow', 'Marked safe by you');
+        return { ok: true };
+      }
       if (!e) throw new Error('That entry is no longer in the history.');
       await setListEntry(e.domain, 'allow', 'Marked safe by you');
       await setOverride(e.id, 'trusted');

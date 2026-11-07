@@ -1,137 +1,617 @@
 /**
- * PLACEHOLDER in-page UI so the engine can be tested end to end.
- * Owned by the frontend (docs/FRONTEND_AGENT.md §4): replace this whole file
- * with the real implementation; keep the `createInPageUI` export.
+ * In-page UI for ScamGuard.
+ * Renders into a closed Shadow DOM so the host page cannot interfere.
+ * No React — vanilla DOM/TypeScript to keep content scripts lean.
  */
-import type { GateAction, GateChoice, InPageUI, Reason, Verdict } from '../../shared/contract';
-import { BRAND } from '../../shared/contract';
 
-const CSS = `
-:host { all: initial; }
-* { box-sizing: border-box; font-family: system-ui, sans-serif; }
-.dim { position: fixed; inset: 0; background: rgba(15,23,42,.72); display: grid; place-items: center; z-index: 2147483647; pointer-events: auto; }
-.card { background: #fff; color: #111827; max-width: 560px; width: calc(100% - 32px); border-radius: 16px; padding: 28px; font-size: 18px; line-height: 1.5; box-shadow: 0 20px 60px rgba(0,0,0,.4); }
-.card h1 { font-size: 26px; margin: 0 0 12px; }
-.card ul { padding-left: 20px; margin: 0 0 20px; }
-.card li { margin-bottom: 10px; }
-.card .brand { font-size: 14px; color: #6b7280; margin-bottom: 8px; }
-.row { display: flex; gap: 12px; flex-wrap: wrap; }
-button { font-size: 18px; min-height: 48px; padding: 0 20px; border-radius: 10px; border: 2px solid #1f2937; background: #fff; color: #111827; cursor: pointer; }
-button.primary { background: #15803d; border-color: #15803d; color: #fff; font-weight: 600; }
-button:disabled { opacity: .5; cursor: default; }
-.link { border: 0; background: none; text-decoration: underline; padding: 0; min-height: 0; font-size: 16px; }
-.banner { position: fixed; top: 0; left: 0; right: 0; background: #fef3c7; color: #78350f; border-bottom: 3px solid #b45309; padding: 12px 16px; font-size: 17px; display: flex; gap: 12px; align-items: center; z-index: 2147483647; pointer-events: auto; }
-.banner b { flex: 1; }
-.hl { position: absolute; border: 3px solid #b91c1c; border-radius: 6px; pointer-events: none; z-index: 2147483646; }
-.hl span { position: absolute; top: -28px; left: 0; background: #b91c1c; color: #fff; font-size: 13px; padding: 3px 8px; border-radius: 6px; white-space: nowrap; pointer-events: auto; }
-`;
+import type { InPageUI, GateAction, GateChoice, Verdict, Reason } from '../../shared/contract';
+import { INPAGE, BTN } from '../strings';
 
-function el<K extends keyof HTMLElementTagNameMap>(tag: K, props: Partial<HTMLElementTagNameMap[K]> = {}, ...kids: (Node | string)[]) {
-  const e = Object.assign(document.createElement(tag), props);
-  e.append(...kids);
-  return e;
-}
+// ---------------------------------------------------------------------------
+// Palette
+// ---------------------------------------------------------------------------
 
-const GATE_TITLES: Record<GateAction, string> = {
-  password: 'Wait before you type your password',
-  card: 'Wait before you enter your card',
-  bankDetails: 'Wait before you enter your bank details',
-  crypto: 'Wait before you connect your wallet',
-  giftCard: 'Wait before you pay with gift cards',
-  download: 'Wait before you download this',
-  upload: 'Wait before you send this file',
-  personalInfo: 'Wait before you share this',
+const COLORS = {
+  safe: '#16a34a',
+  caution: '#d97706',
+  danger: '#dc2626',
+  primary: '#2563eb',
+  text: '#111827',
+  muted: '#6b7280',
+  bg: '#ffffff',
+  overlay: 'rgba(0,0,0,0.6)',
 };
 
-export function createInPageUI(): InPageUI {
-  const host = document.createElement('scamshield-ui');
+function severityBg(s: Verdict['severity']): string {
+  if (s === 'danger') return COLORS.danger;
+  if (s === 'caution') return COLORS.caution;
+  return COLORS.muted;
+}
+
+// ---------------------------------------------------------------------------
+// Shadow DOM host factory
+// ---------------------------------------------------------------------------
+
+interface HostResult {
+  host: HTMLElement;
+  root: ShadowRoot;
+}
+
+function createHost(extraStyle: string): HostResult {
+  const host = document.createElement('div');
+  host.style.cssText =
+    'all:initial;position:fixed;z-index:2147483647;pointer-events:none;top:0;left:0;width:0;height:0';
   const root = host.attachShadow({ mode: 'closed' });
-  root.append(el('style', { textContent: CSS }));
-  host.style.cssText = 'all: initial; position: fixed; inset: 0; pointer-events: none; z-index: 2147483647;';
-  // Don't let clicks and keys on our UI reach the page: scareware re-enters fullscreen on any click.
   for (const type of ['click', 'mousedown', 'mouseup', 'pointerdown', 'pointerup', 'keydown', 'keyup', 'keypress']) {
     host.addEventListener(type, (e) => e.stopPropagation());
   }
+  const s = document.createElement('style');
+  s.textContent =
+    `* { box-sizing: border-box; font-family: system-ui, sans-serif; } ` + extraStyle;
+  root.appendChild(s);
+  return { host, root };
+}
 
-  const mount = () => {
-    if (!host.isConnected) (document.body ?? document.documentElement).append(host);
-  };
-  // Pages that remove or restyle our host get it back.
-  new MutationObserver(() => {
-    if (!host.isConnected || host.style.display === 'none') {
-      host.style.display = '';
-      mount();
+// ---------------------------------------------------------------------------
+// Re-attach observer (page cannot remove our overlay)
+// ---------------------------------------------------------------------------
+
+function watchAndReattach(host: HTMLElement): () => void {
+  const obs = new MutationObserver(() => {
+    if (host.isConnected) return;
+    document.body.appendChild(host);
+  });
+  obs.observe(document.body, { childList: true });
+  return () => obs.disconnect();
+}
+
+// ---------------------------------------------------------------------------
+// Gate action headings lookup
+// ---------------------------------------------------------------------------
+
+const GATE_HEADINGS: Record<GateAction, string> = {
+  password: 'Are you sure this is the right site for your password?',
+  card: 'Are you sure this is the right website for your payment?',
+  bankDetails: "Wait — is this really your bank's website?",
+  crypto: 'Did someone ask you to send money here?',
+  giftCard: 'Did someone tell you to pay with gift cards?',
+  download: 'Did someone on the phone tell you to install this?',
+  upload: 'Are you sure you want to send your file to this site?',
+  personalInfo: 'Are you sure this site needs your personal details?',
+};
+
+// ---------------------------------------------------------------------------
+// Focus trap helper
+// ---------------------------------------------------------------------------
+
+function getFocusable(root: Element): HTMLElement[] {
+  return Array.from(
+    root.querySelectorAll<HTMLElement>(
+      'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
+    )
+  );
+}
+
+function trapFocus(container: Element, escCallback: () => void): () => void {
+  function handler(e: KeyboardEvent) {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      escCallback();
+      return;
     }
-  }).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['style'] });
+    if (e.key !== 'Tab') return;
+    const focusable = getFocusable(container);
+    if (!focusable.length) { e.preventDefault(); return; }
+    const first = focusable[0]!;
+    const last = focusable[focusable.length - 1]!;
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      }
+    } else {
+      if (document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  }
+  document.addEventListener('keydown', handler, true);
+  return () => document.removeEventListener('keydown', handler, true);
+}
 
-  const reasonList = (reasons: Reason[]) =>
-    el('ul', {}, ...reasons.map((r) => el('li', {}, el('b', { textContent: r.title }), el('br'), r.detail)));
+// ---------------------------------------------------------------------------
+// Reduced-motion check
+// ---------------------------------------------------------------------------
 
-  function modal(title: string, v: Verdict, allowTrust: boolean, allowContinue = true): Promise<GateChoice> {
-    mount();
-    return new Promise((resolve) => {
-      const back = el('button', { className: 'primary', textContent: v.safeAlternative?.label ?? 'Go back to safety' });
-      const cont = el('button', { textContent: 'Continue (3)', disabled: true });
-      const trust = el('button', { className: 'link', textContent: 'I trust this website' });
-      const box = el('div', { className: 'dim' },
-        el('div', { className: 'card', role: 'alertdialog' },
-          el('div', { className: 'brand', textContent: BRAND }),
-          el('h1', { textContent: title }),
-          reasonList(v.reasons),
-          el('div', { className: 'row' }, back, ...(allowContinue ? [cont] : []), ...(allowTrust ? [trust] : []))));
-      root.append(box);
-      back.focus();
-      let n = 3;
-      const t = setInterval(() => {
-        n--;
-        cont.textContent = n > 0 ? `Continue (${n})` : 'Continue';
-        if (n <= 0) {
-          cont.disabled = false;
-          clearInterval(t);
-        }
-      }, 1000);
-      const done = (c: GateChoice) => {
-        clearInterval(t);
-        box.remove();
-        resolve(c);
-      };
-      back.onclick = () => done('back');
-      cont.onclick = () => done('continue');
-      trust.onclick = () => done('trust');
-    });
+function prefersReducedMotion(): boolean {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+// ---------------------------------------------------------------------------
+// 1. showBanner
+// ---------------------------------------------------------------------------
+
+function showBanner(v: Verdict): { close(): void } {
+  const bg = v.severity === 'danger' ? COLORS.danger : COLORS.caution;
+  const { host, root } = createHost(`
+    @keyframes slideDown {
+      from { transform: translateY(-100%); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+    .banner {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 60px;
+      background: ${bg};
+      color: #fff;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 10px;
+      z-index: 2147483647;
+      pointer-events: all;
+      font-size: 16px;
+      animation: ${prefersReducedMotion() ? 'none' : 'slideDown 0.25s ease'};
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .icon { font-size: 20px; flex-shrink: 0; }
+    .msg  { flex: 1; min-width: 0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .close-btn {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: #fff;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      pointer-events: all;
+    }
+    .close-btn:hover { background: rgba(255,255,255,0.3); }
+    .close-btn:focus { outline: 2px solid #fff; outline-offset: 2px; }
+  `);
+
+  const banner = document.createElement('div');
+  banner.className = 'banner';
+  banner.setAttribute('role', 'alert');
+  banner.setAttribute('aria-label', INPAGE.bannerAriaLabel);
+
+  const icon = document.createElement('span');
+  icon.className = 'icon';
+  icon.textContent = '⚠';
+
+  const msg = document.createElement('span');
+  msg.className = 'msg';
+  msg.textContent = v.reasons[0]?.title ?? (v.severity === 'danger' ? 'Dangerous page' : 'Be careful on this page');
+
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'close-btn';
+  closeBtn.textContent = '×';
+  closeBtn.setAttribute('aria-label', INPAGE.bannerClose);
+
+  banner.appendChild(icon);
+  banner.appendChild(msg);
+  banner.appendChild(closeBtn);
+  root.appendChild(banner);
+
+  host.style.cssText = 'all:initial;position:fixed;z-index:2147483647;top:0;left:0;width:100%;height:60px;pointer-events:none';
+  document.body.appendChild(host);
+
+  const stopWatch = watchAndReattach(host);
+
+  function close() {
+    stopWatch();
+    host.remove();
   }
 
+  closeBtn.addEventListener('click', close);
+
+  return { close };
+}
+
+// ---------------------------------------------------------------------------
+// 2. gate
+// ---------------------------------------------------------------------------
+
+function gate(v: Verdict, action: GateAction, opts: { heading?: string; allowTrust?: boolean } = {}): Promise<GateChoice> {
+  return new Promise<GateChoice>((resolve) => {
+    const { host, root } = createHost(`
+      .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2147483647;
+        pointer-events: all;
+        padding: 16px;
+      }
+      .card {
+        background: #fff;
+        border-radius: 20px;
+        padding: 36px 32px;
+        max-width: 480px;
+        width: 100%;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        outline: none;
+      }
+      .domain-pill {
+        display: inline-block;
+        background: #fef2f2;
+        color: ${COLORS.danger};
+        font-family: monospace;
+        font-size: 14px;
+        padding: 4px 12px;
+        border-radius: 20px;
+        margin-bottom: 16px;
+        word-break: break-all;
+      }
+      .heading {
+        font-size: 20px;
+        font-weight: 700;
+        color: ${COLORS.text};
+        margin: 0 0 10px;
+        line-height: 1.3;
+      }
+      .detail {
+        font-size: 15px;
+        color: ${COLORS.muted};
+        margin: 0 0 24px;
+        line-height: 1.6;
+      }
+      .btn-back {
+        display: block;
+        width: 100%;
+        height: 56px;
+        background: ${COLORS.primary};
+        color: #fff;
+        border: none;
+        border-radius: 12px;
+        font-size: 18px;
+        font-weight: 700;
+        cursor: pointer;
+        margin-bottom: 10px;
+        pointer-events: all;
+      }
+      .btn-back:hover { opacity: 0.9; }
+      .btn-back:focus { outline: 3px solid #93c5fd; outline-offset: 2px; }
+      .btn-continue {
+        display: block;
+        width: 100%;
+        height: 48px;
+        background: #fff;
+        color: ${COLORS.muted};
+        border: 1px solid #d1d5db;
+        border-radius: 12px;
+        font-size: 15px;
+        cursor: pointer;
+        margin-bottom: 12px;
+        pointer-events: all;
+        transition: color 0.2s;
+      }
+      .btn-continue:not([disabled]):hover { color: ${COLORS.text}; }
+      .btn-continue:disabled { cursor: not-allowed; opacity: 0.5; }
+      .btn-continue:focus { outline: 3px solid #93c5fd; outline-offset: 2px; }
+      .btn-trust {
+        display: block;
+        width: 100%;
+        background: none;
+        border: none;
+        color: ${COLORS.muted};
+        text-decoration: underline;
+        cursor: pointer;
+        font-size: 14px;
+        padding: 4px 0;
+        pointer-events: all;
+      }
+      .btn-trust:hover { color: ${COLORS.text}; }
+      .btn-trust:focus { outline: 2px solid ${COLORS.primary}; border-radius: 4px; }
+    `);
+
+    host.style.cssText =
+      'all:initial;position:fixed;z-index:2147483647;top:0;left:0;width:100%;height:100%;pointer-events:none';
+
+    const overlay = document.createElement('div');
+    overlay.className = 'overlay';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', INPAGE.gateFocusTrapAriaLabel);
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.tabIndex = -1;
+
+    const domainPill = document.createElement('div');
+    domainPill.className = 'domain-pill';
+    domainPill.textContent = `${INPAGE.gateDomain} ${v.domain}`;
+
+    const heading = document.createElement('h2');
+    heading.className = 'heading';
+    heading.textContent = opts.heading ?? GATE_HEADINGS[action];
+
+    const detail = document.createElement('p');
+    detail.className = 'detail';
+    detail.textContent = v.reasons[0]?.detail ?? '';
+
+    const btnBack = document.createElement('button');
+    btnBack.className = 'btn-back';
+    btnBack.textContent = INPAGE.gateBack;
+
+    const btnContinue = document.createElement('button');
+    btnContinue.className = 'btn-continue';
+    btnContinue.disabled = true;
+
+    const btnTrust = document.createElement('button');
+    btnTrust.className = 'btn-trust';
+    btnTrust.textContent = INPAGE.gateTrust;
+
+    card.appendChild(domainPill);
+    card.appendChild(heading);
+    card.appendChild(detail);
+    card.appendChild(btnBack);
+    card.appendChild(btnContinue);
+    if (opts.allowTrust !== false) card.appendChild(btnTrust);
+    overlay.appendChild(card);
+    root.appendChild(overlay);
+
+    document.body.appendChild(host);
+
+    // Countdown
+    let countdown = 3;
+    btnContinue.textContent = INPAGE.gateContinueCounting(countdown);
+
+    const timer = setInterval(() => {
+      countdown -= 1;
+      if (countdown <= 0) {
+        clearInterval(timer);
+        btnContinue.disabled = false;
+        btnContinue.textContent = INPAGE.gateContinue;
+      } else {
+        btnContinue.textContent = INPAGE.gateContinueCounting(countdown);
+      }
+    }, 1000);
+
+    // Focus first button
+    setTimeout(() => btnBack.focus(), 50);
+
+    const stopTrap = trapFocus(card, () => finish('back'));
+
+    function finish(choice: GateChoice) {
+      clearInterval(timer);
+      stopTrap();
+      host.remove();
+      resolve(choice);
+    }
+
+    btnBack.addEventListener('click', () => finish('back'));
+    btnContinue.addEventListener('click', () => { if (!btnContinue.disabled) finish('continue'); });
+    btnTrust.addEventListener('click', () => finish('trust'));
+
+    // Click outside card → go back
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) finish('back');
+    });
+  });
+}
+
+// ---------------------------------------------------------------------------
+// 3. highlight
+// ---------------------------------------------------------------------------
+
+function highlight(el: Element, reason: Reason): { remove(): void } {
+  const { host, root } = createHost(`
+    .ring {
+      position: fixed;
+      border: 2px dashed ${COLORS.caution};
+      border-radius: 4px;
+      pointer-events: none;
+      z-index: 2147483646;
+    }
+    .badge {
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      width: 20px;
+      height: 20px;
+      background: ${COLORS.caution};
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      pointer-events: all;
+    }
+    .tooltip {
+      position: absolute;
+      top: -50px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1f2937;
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      white-space: nowrap;
+      pointer-events: none;
+      display: none;
+    }
+    .badge:hover + .tooltip,
+    .badge:focus + .tooltip { display: block; }
+  `);
+
+  function position() {
+    const rect = el.getBoundingClientRect();
+    ring.style.top = `${rect.top}px`;
+    ring.style.left = `${rect.left}px`;
+    ring.style.width = `${rect.width}px`;
+    ring.style.height = `${rect.height}px`;
+  }
+
+  const ring = document.createElement('div');
+  ring.className = 'ring';
+
+  const badge = document.createElement('div');
+  badge.className = 'badge';
+  badge.textContent = '!';
+  badge.setAttribute('tabindex', '0');
+  badge.setAttribute('aria-label', INPAGE.highlightBadgeAriaLabel);
+  badge.setAttribute('role', 'button');
+
+  const tooltip = document.createElement('div');
+  tooltip.className = 'tooltip';
+  tooltip.textContent = `${INPAGE.highlightTooltipPrefix} ${reason.title}`;
+
+  ring.appendChild(badge);
+  ring.appendChild(tooltip);
+  root.appendChild(ring);
+
+  host.style.cssText = 'all:initial;position:fixed;z-index:2147483646;top:0;left:0;pointer-events:none';
+  document.body.appendChild(host);
+
+  position();
+
+  // Reposition on scroll/resize
+  const reposition = () => position();
+  window.addEventListener('scroll', reposition, { passive: true });
+  window.addEventListener('resize', reposition, { passive: true });
+
   return {
-    showBanner(v) {
-      mount();
-      const close = el('button', { textContent: 'Close' });
-      const bar = el('div', { className: 'banner', role: 'status' }, el('b', { textContent: `Be careful: ${v.reasons[0]?.title ?? 'this website looks risky'}` }), close);
-      root.append(bar);
-      close.onclick = () => bar.remove();
-      return { close: () => bar.remove() };
-    },
-    gate(v, action) {
-      return modal(GATE_TITLES[action], v, true);
-    },
-    highlight(target, reason) {
-      mount();
-      const box = el('div', { className: 'hl' }, el('span', { textContent: reason.title, title: reason.detail }));
-      root.append(box);
-      const place = () => {
-        const r = target.getBoundingClientRect();
-        Object.assign(box.style, { position: 'fixed', top: `${r.top - 4}px`, left: `${r.left - 4}px`, width: `${r.width + 8}px`, height: `${r.height + 8}px` });
-      };
-      place();
-      const timer = setInterval(place, 250);
-      return { remove: () => (clearInterval(timer), box.remove()) };
-    },
-    async scarewareRescue(v) {
-      // Only one way out of this screen: to safety.
-      await modal('This is a fake warning. Your computer is fine.', v, false, false);
-    },
-    async blockOverlay(v) {
-      const c = await modal('This website may be a scam', v, false);
-      return c === 'back' ? 'back' : 'continue';
+    remove() {
+      window.removeEventListener('scroll', reposition);
+      window.removeEventListener('resize', reposition);
+      host.remove();
     },
   };
+}
+
+// ---------------------------------------------------------------------------
+// 4. scarewareRescue
+// ---------------------------------------------------------------------------
+
+function scarewareRescue(_v: Verdict): Promise<void> {
+  return new Promise<void>((resolve) => {
+  const { host, root } = createHost(`
+    .cover {
+      position: fixed;
+      inset: 0;
+      background: #fff;
+      z-index: 2147483647;
+      pointer-events: all;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+      text-align: center;
+    }
+    .icon { font-size: 72px; margin-bottom: 24px; }
+    .title {
+      font-size: 32px;
+      font-weight: 700;
+      color: ${COLORS.safe};
+      margin: 0 0 8px;
+      line-height: 1.2;
+    }
+    .subtitle {
+      font-size: 26px;
+      font-weight: 700;
+      color: ${COLORS.text};
+      margin: 0 0 20px;
+    }
+    .detail {
+      font-size: 18px;
+      color: ${COLORS.muted};
+      max-width: 500px;
+      line-height: 1.6;
+      margin: 0 0 36px;
+    }
+    .btn {
+      height: 60px;
+      padding: 0 48px;
+      background: ${COLORS.primary};
+      color: #fff;
+      border: none;
+      border-radius: 14px;
+      font-size: 20px;
+      font-weight: 700;
+      cursor: pointer;
+      pointer-events: all;
+    }
+    .btn:hover { opacity: 0.9; }
+    .btn:focus { outline: 3px solid #93c5fd; outline-offset: 2px; }
+  `);
+
+  const cover = document.createElement('div');
+  cover.className = 'cover';
+  cover.setAttribute('role', 'alertdialog');
+  cover.setAttribute('aria-label', INPAGE.scarewareAriaLabel);
+
+  const iconEl = document.createElement('div');
+  iconEl.className = 'icon';
+  iconEl.textContent = '✓';
+
+  const title = document.createElement('h1');
+  title.className = 'title';
+  title.textContent = INPAGE.scarewareTitle;
+
+  const subtitle = document.createElement('p');
+  subtitle.className = 'subtitle';
+  subtitle.textContent = INPAGE.scarewareSubtitle;
+
+  const detail = document.createElement('p');
+  detail.className = 'detail';
+  detail.textContent = INPAGE.scarewareDetail;
+
+  const btn = document.createElement('button');
+  btn.className = 'btn';
+  btn.textContent = INPAGE.scarewareButton;
+
+  cover.appendChild(iconEl);
+  cover.appendChild(title);
+  cover.appendChild(subtitle);
+  cover.appendChild(detail);
+  cover.appendChild(btn);
+  root.appendChild(cover);
+
+  host.style.cssText =
+    'all:initial;position:fixed;z-index:2147483647;top:0;left:0;width:100%;height:100%;pointer-events:all';
+  document.body.appendChild(host);
+
+  watchAndReattach(host);
+
+  // Only way out: to safety. The engine does the navigation once we resolve.
+  btn.addEventListener('click', () => {
+    host.remove();
+    resolve();
+  });
+
+  setTimeout(() => btn.focus(), 50);
+  });
+}
+
+// ---------------------------------------------------------------------------
+// 5. blockOverlay: page judged dangerous after it loaded
+// ---------------------------------------------------------------------------
+
+async function blockOverlay(v: Verdict): Promise<'back' | 'continue'> {
+  const choice = await gate(v, 'personalInfo', { heading: INPAGE.blockHeading, allowTrust: false });
+  return choice === 'back' ? 'back' : 'continue';
+}
+
+// ---------------------------------------------------------------------------
+// Export factory
+// ---------------------------------------------------------------------------
+
+export function createInPageUI(): InPageUI {
+  return { showBanner, gate: (v, a) => gate(v, a), highlight, scarewareRescue, blockOverlay };
 }

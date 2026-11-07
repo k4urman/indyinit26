@@ -26,7 +26,7 @@ The name is a working name — use `BRAND` from the contract, never a hard-coded
 | Path (under `apps/extension/`) | Owner |
 | --- | --- |
 | `entrypoints/popup/` | you |
-| `entrypoints/dashboard/` (settings + blocked log) | you |
+| `entrypoints/options/` (settings + blocked log; opens in a tab) | you |
 | `entrypoints/blocked/` (full-page block, `blocked.html?id=…`) | you |
 | `src/ui/` (shared components) and `src/ui/inpage/` (implements `InPageUI`) | you |
 | `src/ui/strings.ts` (all user-facing copy, ready for `browser.i18n`) | you |
