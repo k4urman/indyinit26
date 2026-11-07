@@ -339,12 +339,17 @@ export default function App() {
                 Check
               </button>
             </form>
-            {linkResult && (
-              <div className={`result ${linkResult.severity}`}>
-                <b>{LINK_VERDICT[linkResult.severity]}</b>
+            {linkResult && (() => {
+              // For an explicit link check, any reason is worth a "be careful", even if the
+              // URL-only score sits below the page-block threshold.
+              const sev = linkResult.reasons.length && (linkResult.severity === 'safe' || linkResult.severity === 'unknown') ? 'caution' : linkResult.severity;
+              return (
+              <div className={`result ${sev}`}>
+                <b>{LINK_VERDICT[sev]}</b>
                 <span>{linkResult.reasons[0] ? `${linkResult.reasons[0].title}. ${linkResult.reasons[0].detail}` : `${linkResult.domain} isn’t on any scam list and looks normal.`}</span>
               </div>
-            )}
+              );
+            })()}
             {error && <p className="err">{error}</p>}
           </section>
         </div>
