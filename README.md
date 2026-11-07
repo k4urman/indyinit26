@@ -30,22 +30,28 @@ Scam pages do their damage in the first few hours, before traditional blocklists
 
 Sentinel is built as a Manifest V3 extension using **WXT** (Vite-based) and TypeScript, allowing a single codebase to target Chrome, Edge, and Firefox.
 
-┌──────────────────────── Browser extension (MV3) ────────────────────────┐
-│ Content script            Background (SW / event page)    UI            │
-│  • DOM & form signals ──▶  • Risk engine (scoring)   ──▶  • Popup        │
-│  • Behavior hooks          • URL / domain analysis        • Dashboard    │
-│  • Highlight overlay  ◀──  • Policy (slider, lists)  ──▶  • Interstitial │
-│  • PII detector            • Downloads / DNR rules        • Overlays     │
-│                            • Local AI (offscreen doc)                    │
-│                            • Storage: settings, lists, log, caches       │
-└───────────────┬─────────────────────────────────────────────────────────┘
-                │ only hash prefixes / domains, never page content (default)
-┌───────────────▼──────────── Optional cloud ─────────────────────────────┐
-│ Threat-feed builder (CI)   Reputation proxy        Opt-in services      │
-│  • pulls PhishTank,         • Safe Browsing v4/v5  • BYO-key LLM         │
-│    OpenPhish, URLhaus        hash-prefix lookups   • community reports   │
-│  • signs & publishes lists  • RDAP domain age      • trusted contact     │
-└─────────────────────────────────────────────────────────────────────────┘
+```text
++------------------------------ Browser extension (MV3) ------------------------------+
+| Content script                 Background (SW / event page)              UI         |
+|                                                                                     |
+|  * DOM & form signals  <---->  * Risk engine (scoring)                 * Popup      |
+|  * Behavior hooks              * URL / domain analysis                 * Dashboard  |
+|  * Highlight overlay   <---->  * Policy (slider, lists)                * Interstitial|
+|  * PII detector                * Downloads / DNR rules                 * Overlays   |
+|                                * Local AI (offscreen doc)                           |
+|                                * Storage: settings, lists, log, caches              |
++---------------------------------------|---------------------------------------------+
+                                        | (only hash prefixes / domains,
+                                        |  never page content by default)
++---------------------------------------v---------------------------------------------+
+| Optional cloud                                                                      |
+|                                                                                     |
+|  * Threat-feed builder (CI)      * Reputation proxy          * Opt-in services      |
+|    - pulls PhishTank/OpenPhish     - Safe Browsing v4/v5       - BYO-key LLM        |
+|    - signs & publishes lists       - RDAP domain age           - community reports  |
+|                                                                - trusted contact    |
++-------------------------------------------------------------------------------------+
+```
 
 ### How Detection Works
 No single trick catches every scam. Sentinel combines independent signal families (Reputation, Identity/Impersonation, Domain Trust, Page Intent, Pressure Language, Hostile Behavior, and Local AI). A page must trip several signals to be blocked, keeping false positives low while catching brand-new scams.
@@ -89,4 +95,3 @@ Sentinel is built on the principle of **"Free, open source, local-first."**
 *   **PII is Never Stored:** Typed personal data is detected by pattern only and is immediately discarded.
 *   **Incognito Mode:** If enabled, protection runs but *nothing* is logged.
 *   **No Remote Code:** All detection logic is bundled. Threat lists are cryptographically signed and verified.
-
