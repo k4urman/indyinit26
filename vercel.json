@@ -1,7 +1,0 @@
-{
-  "outputDirectory": "site",
-  "cleanUrls": true,
-  "headers": [
-    { "source": "/downloads/(.*)", "headers": [{ "key": "Content-Disposition", "value": "attachment" }] }
-  ]
-}
