@@ -12,6 +12,7 @@
 import type { GateAction, GateChoice, GateOptions, InPageUI, Reason, Toast, Verdict } from '../../shared/contract';
 import { BRAND } from '../../shared/contract';
 import { INPAGE } from '../strings';
+import { LOGO_32 } from '../logo-b64';
 
 // ---------------------------------------------------------------------------
 // Styles
@@ -126,8 +127,16 @@ function svg(shapes: Shape[], size = 22, extra: Record<string, string> = {}): SV
 const SHIELD_PATH = 'M12 2 4 5v6.2c0 5 3.4 9.4 8 10.8 4.6-1.4 8-5.8 8-10.8V5z';
 const fill = (d: string, size: number) => svg([['path', { d, fill: 'currentColor', stroke: 'none' }]], size);
 const I = {
-  /** Sentinel mark: solid shield. */
-  shield: (size = 18) => fill(SHIELD_PATH, size),
+  /** Sentinel logo image. */
+  shield: (size = 18) => {
+    const img = document.createElement('img');
+    img.src = LOGO_32;
+    img.width = size;
+    img.height = size;
+    img.setAttribute('aria-hidden', 'true');
+    img.style.cssText = 'display:block;object-fit:contain';
+    return img as unknown as SVGSVGElement;
+  },
   /** Shield with a cut-out tick (for the rescue screen). */
   shieldCheck: (size = 84) =>
     svg([['path', { d: SHIELD_PATH, fill: 'currentColor', stroke: 'none' }], ['path', { d: 'm8.3 12.2 2.6 2.6 5-5.2', stroke: '#fff', 'stroke-width': '2' }]], size),

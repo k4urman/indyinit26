@@ -15,6 +15,7 @@ import {
 } from '@/src/shared/contract';
 import { ERRORS, OPTIONS, POPUP, formatEventTime } from '@/src/ui/strings';
 import { THEME_CSS } from '@/src/ui/theme';
+import { LOGO_32 } from '@/src/ui/logo-b64';
 
 // ---------------------------------------------------------------------------
 // Styles (popup only; shared tokens in src/ui/theme.ts)
@@ -86,11 +87,7 @@ body { width: 380px; min-height: 540px; overflow-x: hidden; }
 // ---------------------------------------------------------------------------
 
 function Logo({ size = 20 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
-      <path fill="currentColor" d="M12 2 4 5v6.2c0 5 3.4 9.4 8 10.8 4.6-1.4 8-5.8 8-10.8V5z" />
-    </svg>
-  );
+  return <img src={LOGO_32} width={size} height={size} alt="" aria-hidden="true" style={{ display: 'block' }} />;
 }
 
 /** Solid symbols in the system style: checkmark.shield, exclamationmark.triangle, xmark.octagon. */
