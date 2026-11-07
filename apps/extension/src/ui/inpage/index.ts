@@ -1,8 +1,8 @@
 /**
  * Sentinel in-page UI (implements InPageUI from contract.ts).
  *
- * Look: dark frosted glass, one accent gradient, calm motion. Friendly toasts
- * for good news, a single obvious safe action on every warning.
+ * Look: system-native alert sheets and notifications. Neutral surfaces, one
+ * blue for the safe action, solid symbols, follows the OS light/dark setting.
  *
  * Hard rules (docs/FRONTEND_AGENT.md §4): closed Shadow DOM, all CSS inline,
  * re-attach if the page removes us, never let our clicks/keys reach the page,
@@ -21,116 +21,86 @@ const CSS = `
 :host { all: initial; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 .root {
-  --glass: rgba(15, 20, 38, 0.82); --line: rgba(255,255,255,0.10); --line2: rgba(255,255,255,0.16);
-  --text: #f5f7ff; --muted: #a8b0c8; --dim: #8a93ad;
-  --accent1: #7c5cff; --accent2: #22d3ee; --danger: #ff5d6c; --warn: #ffb547; --safe: #3ee089;
-  font: 400 17px/1.5 ui-sans-serif, -apple-system, "Segoe UI Variable", "Segoe UI", system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
-  color: var(--text); -webkit-font-smoothing: antialiased;
+  --surface: #ffffff; --line: #d2d2d7; --soft: #f5f5f7; --text: #1d1d1f; --muted: #6e6e73; --dim: #86868b;
+  --blue: #0071e3; --blue-hover: #0077ed; --link: #0066cc; --red: #e30000; --orange: #bf4800; --green: #1d8a3a;
+  --scrim: rgba(0,0,0,.42); --shadow: 0 22px 70px rgba(0,0,0,.28), 0 2px 8px rgba(0,0,0,.08);
+  font: 400 15px/1.47 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "Segoe UI", Helvetica, Arial, sans-serif;
+  letter-spacing: -.01em; color: var(--text); -webkit-font-smoothing: antialiased;
 }
-button { font: inherit; cursor: pointer; border: 0; background: none; color: inherit; }
-button:focus-visible { outline: 3px solid var(--accent2); outline-offset: 3px; }
+@media (prefers-color-scheme: dark) {
+  .root { --surface: #1c1c1e; --line: #38383a; --soft: #2c2c2e; --text: #f5f5f7; --muted: #a1a1a6; --dim: #8e8e93;
+    --blue: #0a84ff; --blue-hover: #409cff; --link: #2997ff; --red: #ff453a; --orange: #ff9f0a; --green: #30d158;
+    --scrim: rgba(0,0,0,.6); --shadow: 0 22px 70px rgba(0,0,0,.6); }
+}
+button { font: inherit; letter-spacing: inherit; cursor: pointer; border: 0; background: none; color: inherit; }
+button:focus-visible { outline: 3px solid rgba(0,113,227,.45); outline-offset: 2px; }
 
-/* ---- Modal ---- */
-.scrim { position: fixed; inset: 0; z-index: 2147483647; display: grid; place-items: center; padding: 16px;
-  background: radial-gradient(1200px 600px at 50% 0%, rgba(124,92,255,.18), transparent 60%), rgba(5, 8, 20, .62);
-  backdrop-filter: blur(6px) saturate(120%); -webkit-backdrop-filter: blur(6px) saturate(120%);
-  animation: fade .22s ease-out both; pointer-events: auto; }
-.card { position: relative; width: min(520px, 100%); max-height: calc(100vh - 32px); overflow-x: hidden; overflow-y: auto; scrollbar-width: none; border-radius: 24px; padding: 24px 24px 18px;
-  background: var(--glass); border: 1px solid var(--line);
-  box-shadow: 0 30px 80px rgba(0,0,0,.55), 0 1px 0 rgba(255,255,255,.08) inset;
-  backdrop-filter: blur(22px) saturate(160%); -webkit-backdrop-filter: blur(22px) saturate(160%);
-  animation: pop .38s cubic-bezier(.2,.9,.25,1.15) both; }
-.card::before { content: ""; position: absolute; inset: -1px; border-radius: 24px; padding: 1px; pointer-events: none;
-  background: linear-gradient(135deg, rgba(124,92,255,.7), rgba(34,211,238,.25) 40%, transparent 70%);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
-.top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-.brand { display: inline-flex; align-items: center; gap: 8px; font-weight: 650; font-size: 14px; letter-spacing: .2px; color: var(--muted); }
-.chip { font-size: 12.5px; font-weight: 650; letter-spacing: .3px; text-transform: uppercase; padding: 5px 10px; border-radius: 999px; }
-.chip.danger { color: #ffd6da; background: rgba(255,93,108,.16); border: 1px solid rgba(255,93,108,.35); }
-.chip.warn { color: #ffe6bf; background: rgba(255,181,71,.14); border: 1px solid rgba(255,181,71,.35); }
-.hero { display: flex; gap: 16px; align-items: flex-start; }
-.badge { flex: none; width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; color: var(--danger);
-  background: linear-gradient(135deg, rgba(255,93,108,.22), rgba(255,93,108,.06)); border: 1px solid rgba(255,93,108,.35);
-  animation: pulse 2.4s ease-in-out infinite; }
-.badge.warn { color: var(--warn); background: linear-gradient(135deg, rgba(255,181,71,.22), rgba(255,181,71,.05)); border-color: rgba(255,181,71,.35); animation: none; box-shadow: 0 0 40px rgba(255,181,71,.2); }
-h1 { font-size: 22px; line-height: 1.25; font-weight: 720; letter-spacing: -.3px; }
-.domain { display: inline-block; margin-top: 8px; font: 500 14px/1.4 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  color: #ffc2c8; background: rgba(255,93,108,.10); border: 1px solid rgba(255,93,108,.22); padding: 3px 9px; border-radius: 8px; word-break: break-all; }
-.reasons { list-style: none; margin: 16px 0 18px; display: grid; gap: 8px; }
-.reason { display: grid; grid-template-columns: 20px 1fr; gap: 10px; padding: 10px 12px; border-radius: 14px;
-  background: rgba(255,255,255,.035); border: 1px solid var(--line); animation: rise .45s cubic-bezier(.2,.9,.25,1) both; }
-.reason b { display: block; font-weight: 650; font-size: 16px; }
-.reason span { display: block; color: var(--muted); font-size: 14.5px; margin-top: 1px; line-height: 1.45; }
-.ri { width: 20px; height: 20px; margin-top: 1px; color: var(--danger); }
-.actions { display: grid; gap: 10px; }
-.primary { min-height: 54px; border-radius: 14px; font-weight: 700; font-size: 18px; color: #fff; padding: 0 20px;
-  background: linear-gradient(135deg, var(--accent1), #4f7cff 55%, var(--accent2));
-  box-shadow: 0 10px 30px rgba(92,110,255,.45), 0 1px 0 rgba(255,255,255,.25) inset; transition: transform .15s, box-shadow .15s; }
-.primary:hover { transform: translateY(-1px); box-shadow: 0 14px 36px rgba(92,110,255,.55), 0 1px 0 rgba(255,255,255,.25) inset; }
-.secondary { min-height: 48px; border-radius: 14px; font-weight: 600; color: var(--muted); border: 1px solid var(--line2); background: rgba(255,255,255,.03); }
-.secondary:disabled { opacity: .45; cursor: default; }
-.secondary:not(:disabled):hover { color: var(--text); background: rgba(255,255,255,.06); }
-.tertiary { justify-self: center; font-size: 14.5px; color: var(--dim); text-decoration: underline; text-underline-offset: 3px; padding: 6px; }
-.foot { display: flex; align-items: center; justify-content: center; gap: 7px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line);
-  color: var(--dim); font-size: 13px; }
+/* ---- Alert sheet ---- */
+.scrim { position: fixed; inset: 0; z-index: 2147483647; display: grid; place-items: center; padding: 20px; background: var(--scrim);
+  animation: fade .2s ease-out both; pointer-events: auto; }
+.card { width: min(480px, 100%); max-height: calc(100vh - 40px); overflow-y: auto; scrollbar-width: none; border-radius: 18px; padding: 32px 32px 24px;
+  background: var(--surface); box-shadow: var(--shadow); text-align: center; animation: sheet .3s cubic-bezier(.25,.1,.25,1) both; }
+.symbol { width: 56px; height: 56px; margin: 0 auto 16px; color: var(--red); }
+.symbol.warn { color: var(--orange); }
+h1 { font-size: 24px; line-height: 1.17; font-weight: 600; letter-spacing: -.02em; }
+.domain { margin-top: 6px; font-size: 15px; color: var(--muted); word-break: break-all; }
+.reasons { list-style: none; margin: 22px 0 24px; text-align: left; border-top: 1px solid var(--line); }
+.reason { padding: 13px 0; border-bottom: 1px solid var(--line); }
+.reason b { display: block; font-weight: 600; font-size: 15px; }
+.reason span { display: block; color: var(--muted); font-size: 14px; margin-top: 2px; }
+.actions { display: grid; gap: 6px; justify-items: center; }
+.primary { width: 100%; min-height: 48px; border-radius: 980px; font-weight: 500; font-size: 17px; color: #fff; background: var(--blue); transition: background .15s; }
+.primary:hover { background: var(--blue-hover); }
+.secondary { min-height: 40px; padding: 0 12px; font-size: 15px; color: var(--link); }
+.secondary:disabled { color: var(--dim); cursor: default; }
+.tertiary { font-size: 13px; color: var(--dim); padding: 4px 8px; }
+.tertiary:hover, .secondary:not(:disabled):hover { text-decoration: underline; }
+.foot { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 18px; color: var(--dim); font-size: 12px; }
+.foot svg { color: var(--dim); }
 
 /* ---- Rescue (fake virus warning) ---- */
 .rescue { position: fixed; inset: 0; z-index: 2147483647; display: grid; place-items: center; padding: 24px; text-align: center; pointer-events: auto; overflow: auto;
-  background: radial-gradient(900px 500px at 50% 20%, rgba(62,224,137,.18), transparent 60%), radial-gradient(800px 600px at 80% 100%, rgba(124,92,255,.22), transparent 60%), #070b18;
-  animation: fade .3s ease-out both; }
-.rescue .inner { max-width: 560px; animation: pop .5s cubic-bezier(.2,.9,.25,1.1) both; }
-.halo { width: 116px; height: 116px; margin: 0 auto 26px; border-radius: 34px; display: grid; place-items: center;
-  background: linear-gradient(135deg, rgba(62,224,137,.25), rgba(34,211,238,.10)); border: 1px solid rgba(62,224,137,.4);
-  box-shadow: 0 0 80px rgba(62,224,137,.35); animation: breathe 3.2s ease-in-out infinite; }
-.rescue h1 { font-size: 38px; letter-spacing: -.6px; }
-.rescue h1 em { font-style: normal; background: linear-gradient(90deg, var(--safe), var(--accent2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.rescue p.lead { font-size: 21px; color: var(--muted); margin: 12px 0 26px; }
-.done { list-style: none; display: grid; gap: 10px; margin: 0 auto 30px; max-width: 440px; text-align: left; }
-.done li { display: flex; gap: 12px; align-items: center; padding: 12px 16px; border-radius: 14px; background: rgba(255,255,255,.04); border: 1px solid var(--line);
-  animation: rise .5s cubic-bezier(.2,.9,.25,1) both; }
-.done svg { flex: none; color: var(--safe); }
-.rescue .primary { padding: 0 40px; }
-.rescue .foot { border-top: 0; }
+  background: var(--surface); animation: fade .25s ease-out both; }
+.rescue .inner { max-width: 600px; animation: appear .5s cubic-bezier(.25,.1,.25,1) both; }
+.rescue .symbol { width: 84px; height: 84px; color: var(--green); margin-bottom: 24px; }
+.rescue h1 { font-size: 48px; line-height: 1.08; font-weight: 600; letter-spacing: -.03em; }
+.rescue p.lead { font-size: 21px; line-height: 1.38; color: var(--muted); margin: 14px auto 32px; max-width: 520px; }
+.done { list-style: none; display: grid; width: max-content; max-width: 100%; gap: 12px; margin: 0 auto 36px; text-align: left; }
+.done li { display: flex; gap: 10px; align-items: center; font-size: 17px; }
+.done svg { flex: none; color: var(--green); }
+.rescue .primary { width: auto; padding: 0 32px; }
+.rescue .foot { margin-top: 28px; }
 
-/* ---- Floating banner + toasts (top-right stack) ---- */
-.stack { position: fixed; top: 16px; right: 16px; z-index: 2147483647; display: grid; gap: 10px; width: min(380px, calc(100vw - 32px)); pointer-events: none; }
-.pill { pointer-events: auto; display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: start; padding: 14px 14px 14px 16px; border-radius: 18px;
-  background: var(--glass); border: 1px solid var(--line); box-shadow: 0 18px 50px rgba(0,0,0,.45);
-  backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%);
-  animation: slide .45s cubic-bezier(.2,.9,.25,1.15) both; }
-.pill.out { animation: slideout .25s ease-in both; }
-.dot { width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; }
-.dot svg { width: 18px; height: 18px; }
-.dot.warn { background: rgba(255,181,71,.16); color: var(--warn); }
-.dot.safe { background: rgba(62,224,137,.16); color: var(--safe); }
-.dot.info { background: rgba(124,92,255,.18); color: #b9a8ff; }
-.pill b { display: block; font-size: 15.5px; font-weight: 650; }
-.pill span { display: block; font-size: 14px; color: var(--muted); margin-top: 1px; }
-.count { display: inline-flex !important; align-items: center; gap: 6px; margin-top: 8px; font-size: 12.5px; font-weight: 650; color: #cfd6ff;
-  padding: 4px 9px; border-radius: 999px; background: linear-gradient(135deg, rgba(124,92,255,.25), rgba(34,211,238,.15)); border: 1px solid rgba(124,92,255,.35); }
-.count span { color: #cfd6ff !important; margin: 0 !important; font-size: 12.5px !important; }
-.x { width: 30px; height: 30px; border-radius: 9px; color: var(--dim); font-size: 20px; line-height: 1; }
-.x:hover { background: rgba(255,255,255,.07); color: var(--text); }
-.why { margin-top: 6px; font-size: 13.5px; color: #b9a8ff; text-decoration: underline; text-underline-offset: 3px; }
-.more { margin-top: 6px; display: grid; gap: 6px; }
-.more div { font-size: 13.5px; color: var(--muted); }
-.bar { height: 3px; border-radius: 3px; margin-top: 10px; background: linear-gradient(90deg, var(--accent1), var(--accent2)); transform-origin: left; animation: drain linear both; }
+/* ---- Banner + notifications (top-right) ---- */
+.stack { position: fixed; top: 14px; right: 14px; z-index: 2147483647; display: grid; gap: 8px; width: min(360px, calc(100vw - 28px)); pointer-events: none; }
+.pill { pointer-events: auto; display: grid; grid-template-columns: 34px 1fr auto; gap: 12px; align-items: start; padding: 13px 12px 13px 14px; border-radius: 16px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent); box-shadow: 0 10px 34px rgba(0,0,0,.18), 0 0 0 .5px rgba(0,0,0,.12);
+  backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); animation: drop .35s cubic-bezier(.25,.1,.25,1) both; }
+.pill.out { animation: lift .2s ease-in both; }
+.app { width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; background: var(--text); color: var(--surface); }
+.app.warn { background: var(--orange); color: #fff; }
+.app.safe { background: var(--green); color: #fff; }
+.pill b { display: block; font-size: 14px; font-weight: 600; }
+.pill span { display: block; font-size: 13.5px; color: var(--muted); margin-top: 1px; }
+.count { margin-top: 4px; font-size: 12px; color: var(--dim); }
+.x { width: 26px; height: 26px; border-radius: 50%; color: var(--dim); font-size: 17px; line-height: 1; }
+.x:hover { background: var(--soft); color: var(--text); }
+.why { margin-top: 4px; font-size: 13px; color: var(--link); }
+.why:hover { text-decoration: underline; }
+.more { margin-top: 6px; display: grid; gap: 4px; }
+.more div { font-size: 13px; color: var(--muted); }
 
 /* ---- Highlight ---- */
-.hl { position: fixed; z-index: 2147483646; pointer-events: none; border-radius: 12px; animation: ring 2s ease-in-out infinite; }
-.tag { position: absolute; left: 0; top: -34px; pointer-events: auto; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; max-width: 80vw; overflow: hidden; text-overflow: ellipsis;
-  font-size: 13px; font-weight: 650; color: #fff; padding: 6px 10px; border-radius: 999px; background: linear-gradient(135deg, #ff5d6c, #ff7a59); box-shadow: 0 6px 18px rgba(255,93,108,.45); }
+.hl { position: fixed; z-index: 2147483646; pointer-events: none; border-radius: 8px; box-shadow: 0 0 0 2px var(--red), 0 0 0 5px rgba(227,0,0,.12); }
+.tag { position: absolute; left: 0; top: -30px; pointer-events: auto; white-space: nowrap; max-width: 80vw; overflow: hidden; text-overflow: ellipsis;
+  font-size: 12.5px; font-weight: 500; color: #fff; padding: 4px 10px; border-radius: 980px; background: var(--red); }
 
 @keyframes fade { from { opacity: 0 } to { opacity: 1 } }
-@keyframes pop { from { opacity: 0; transform: translateY(10px) scale(.96) } to { opacity: 1; transform: none } }
-@keyframes rise { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }
-@keyframes slide { from { opacity: 0; transform: translateX(24px) scale(.98) } to { opacity: 1; transform: none } }
-@keyframes slideout { to { opacity: 0; transform: translateX(24px) } }
-@keyframes pulse { 0%,100% { box-shadow: 0 0 30px rgba(255,93,108,.2) } 50% { box-shadow: 0 0 50px rgba(255,93,108,.38) } }
-@keyframes breathe { 0%,100% { transform: scale(1) } 50% { transform: scale(1.04) } }
-@keyframes ring { 0%,100% { box-shadow: 0 0 0 2px #ff5d6c, 0 0 0 6px rgba(255,93,108,.18), 0 0 24px rgba(255,93,108,.35) } 50% { box-shadow: 0 0 0 2px #ff5d6c, 0 0 0 9px rgba(255,93,108,.10), 0 0 36px rgba(255,93,108,.5) } }
-@keyframes drain { from { transform: scaleX(1) } to { transform: scaleX(0) } }
-@media (prefers-reduced-motion: reduce) { *, *::before { animation: none !important; transition: none !important; } }
+@keyframes sheet { from { opacity: 0; transform: scale(.97) } to { opacity: 1; transform: none } }
+@keyframes appear { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }
+@keyframes drop { from { opacity: 0; transform: translateY(-8px) } to { opacity: 1; transform: none } }
+@keyframes lift { to { opacity: 0; transform: translateY(-8px) } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 `;
 
 // ---------------------------------------------------------------------------
@@ -153,37 +123,22 @@ function svg(shapes: Shape[], size = 22, extra: Record<string, string> = {}): SV
   return s;
 }
 
-const SHIELD_PATH = 'M12 2.5 4.5 5.5v6c0 4.6 3.1 8.6 7.5 10 4.4-1.4 7.5-5.4 7.5-10v-6z';
-let gradId = 0;
+const SHIELD_PATH = 'M12 2 4 5v6.2c0 5 3.4 9.4 8 10.8 4.6-1.4 8-5.8 8-10.8V5z';
+const fill = (d: string, size: number) => svg([['path', { d, fill: 'currentColor', stroke: 'none' }]], size);
 const I = {
-  /** Brand mark: gradient shield with a tick. */
-  shield(size = 18): SVGSVGElement {
-    const id = `sg${++gradId}`;
-    const s = svg([['path', { d: SHIELD_PATH, fill: `url(#${id})`, stroke: 'none' }], ['path', { d: 'm8.5 12 2.4 2.4 4.8-4.8', stroke: '#fff', 'stroke-width': '2.2' }]], size);
-    const defs = document.createElementNS(NS, 'defs');
-    const g = document.createElementNS(NS, 'linearGradient');
-    g.setAttribute('id', id);
-    g.setAttribute('x1', '0');
-    g.setAttribute('y1', '0');
-    g.setAttribute('x2', '1');
-    g.setAttribute('y2', '1');
-    for (const [off, color] of [['0', '#7c5cff'], ['1', '#22d3ee']]) {
-      const st = document.createElementNS(NS, 'stop');
-      st.setAttribute('offset', off!);
-      st.setAttribute('stop-color', color!);
-      g.append(st);
-    }
-    defs.append(g);
-    s.prepend(defs);
-    return s;
-  },
-  alert: () => svg([['path', { d: 'M12 3 2.5 19.5h19z' }], ['path', { d: 'M12 10v4.5M12 17.5h.01' }]], 26),
-  stop: () => svg([['path', { d: 'M8 2.5h8l5.5 5.5v8L16 21.5H8L2.5 16V8z' }], ['path', { d: 'M12 7.5v5.5M12 16.5h.01' }]], 26),
-  dot: () => svg([['circle', { cx: '12', cy: '12', r: '9' }], ['path', { d: 'M12 8v5M12 16h.01' }]]),
-  check: (size = 20) => svg([['path', { d: 'm5 12.5 4.5 4.5L19 7.5' }]], size),
-  lock: () => svg([['rect', { x: '5', y: '11', width: '14', height: '10', rx: '2.5' }], ['path', { d: 'M8 11V8a4 4 0 0 1 8 0v3' }]], 14),
-  bigShield: () =>
-    svg([['path', { d: SHIELD_PATH, fill: 'rgba(62,224,137,.18)', stroke: '#3ee089' }], ['path', { d: 'm8.5 12 2.4 2.4 4.8-4.8', stroke: '#3ee089', 'stroke-width': '2.4' }]], 58),
+  /** Sentinel mark: solid shield. */
+  shield: (size = 18) => fill(SHIELD_PATH, size),
+  /** Shield with a cut-out tick (for the rescue screen). */
+  shieldCheck: (size = 84) =>
+    svg([['path', { d: SHIELD_PATH, fill: 'currentColor', stroke: 'none' }], ['path', { d: 'm8.3 12.2 2.6 2.6 5-5.2', stroke: '#fff', 'stroke-width': '2' }]], size),
+  /** exclamationmark.triangle.fill */
+  warn: (size = 56) =>
+    svg([['path', { d: 'M10.3 3.4a2 2 0 0 1 3.4 0l8.4 14.5a2 2 0 0 1-1.7 3H3.6a2 2 0 0 1-1.7-3z', fill: 'currentColor', stroke: 'none' }], ['path', { d: 'M12 9v4.5M12 17h.01', stroke: '#fff', 'stroke-width': '2.2' }]], size),
+  /** xmark.octagon.fill */
+  stop: (size = 56) =>
+    svg([['path', { d: 'M8.2 2h7.6L22 8.2v7.6L15.8 22H8.2L2 15.8V8.2z', fill: 'currentColor', stroke: 'none' }], ['path', { d: 'm9 9 6 6m0-6-6 6', stroke: '#fff', 'stroke-width': '2.2' }]], size),
+  check: (size = 18) => svg([['path', { d: 'm5 12.5 4.5 4.5L19 7.5' }]], size, { 'stroke-width': '2.4' }),
+  lock: () => fill('M7 10V8a5 5 0 0 1 10 0v2h1a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1zm2 0h6V8a3 3 0 0 0-6 0z', 12),
 };
 
 // ---------------------------------------------------------------------------
@@ -271,7 +226,6 @@ export function createInPageUI(): InPageUI {
     v: Verdict;
     heading: string;
     tone: 'danger' | 'warn';
-    chip: string;
     allowContinue: boolean;
     allowTrust: boolean;
   }): Promise<GateChoice> {
@@ -284,33 +238,21 @@ export function createInPageUI(): InPageUI {
       card.setAttribute('aria-modal', 'true');
       card.setAttribute('aria-label', opts.heading);
 
-      const top = el('div', 'top');
-      const brand = el('div', 'brand');
-      brand.append(I.shield(), el('span', '', BRAND));
-      top.append(brand, el('span', `chip ${opts.tone}`, opts.chip));
-
-      const hero = el('div', 'hero');
-      const badge = el('div', `badge ${opts.tone === 'warn' ? 'warn' : ''}`);
-      badge.append(opts.tone === 'warn' ? I.alert() : I.stop());
-      const titleBox = el('div');
-      titleBox.append(el('h1', '', opts.heading));
-      if (v.domain) titleBox.append(el('div', 'domain', v.domain));
-      hero.append(badge, titleBox);
+      const symbol = opts.tone === 'warn' ? I.warn() : I.stop();
+      symbol.classList.add('symbol');
+      if (opts.tone === 'warn') symbol.classList.add('warn');
+      const title = el('h1', '', opts.heading);
+      const domain = v.domain ? el('div', 'domain', v.domain) : null;
 
       const list = el('ul', 'reasons');
-      v.reasons.slice(0, 3).forEach((r: Reason, i) => {
+      v.reasons.slice(0, 3).forEach((r: Reason) => {
         const li = el('li', 'reason');
-        li.style.animationDelay = `${120 + i * 70}ms`;
-        const icon = I.dot();
-        icon.classList.add('ri');
-        const txt = el('div');
-        txt.append(el('b', '', r.title), el('span', '', r.detail));
-        li.append(icon, txt);
+        li.append(el('b', '', r.title), el('span', '', r.detail));
         list.append(li);
       });
 
       const actions = el('div', 'actions');
-      const back = el('button', 'primary', v.safeAlternative?.label ?? 'Take me to safety');
+      const back = el('button', 'primary', v.safeAlternative ? `Go to ${v.safeAlternative.url.replace(/^https?:\/\/|\/$/g, '')}` : 'Go back to safety');
       actions.append(back);
       let timer: ReturnType<typeof setInterval> | undefined;
       let cont: HTMLButtonElement | null = null;
@@ -333,9 +275,9 @@ export function createInPageUI(): InPageUI {
       if (trust) actions.append(trust);
 
       const foot = el('div', 'foot');
-      foot.append(I.lock(), el('span', '', 'Checked on your device. Nothing you type leaves your computer.'));
+      foot.append(I.shield(12), el('span', '', `${BRAND} · Checked on this device`));
 
-      card.append(top, hero, list, actions, foot);
+      card.append(symbol, title, ...(domain ? [domain] : []), list, actions, foot);
       scrim.append(card);
       root.append(scrim);
       if (stack) root.append(stack); // toasts stay above the card
@@ -360,8 +302,8 @@ export function createInPageUI(): InPageUI {
     mount();
     const p = el('div', 'pill');
     p.setAttribute('role', role);
-    const dot = el('div', `dot ${kind}`);
-    dot.append(kind === 'safe' ? I.check(18) : kind === 'warn' ? I.alert() : I.shield(18));
+    const dot = el('div', `app ${kind}`);
+    dot.append(kind === 'safe' ? I.check(18) : kind === 'warn' ? I.warn(18) : I.shield(18));
     const body = el('div');
     const x = el('button', 'x', '×');
     x.setAttribute('aria-label', INPAGE.bannerClose);
@@ -396,18 +338,18 @@ export function createInPageUI(): InPageUI {
 
     gate(v, action: GateAction, o: GateOptions = {}) {
       const allowContinue = o.allowContinue !== false;
-      return modal({ v, heading: INPAGE.gateTitle(action), tone: 'warn', chip: allowContinue ? 'Paused' : 'Blocked', allowContinue, allowTrust: true });
+      return modal({ v, heading: INPAGE.gateTitle(action), tone: 'warn', allowContinue, allowTrust: true });
     },
 
     async blockOverlay(v, o: GateOptions = {}) {
-      const c = await modal({ v, heading: INPAGE.blockHeading, tone: 'danger', chip: 'Blocked', allowContinue: o.allowContinue !== false, allowTrust: false });
+      const c = await modal({ v, heading: INPAGE.blockHeading, tone: 'danger', allowContinue: o.allowContinue !== false, allowTrust: false });
       return c === 'back' ? 'back' : 'continue';
     },
 
     highlight(target, reason) {
       mount();
       const box = el('div', 'hl');
-      const tag = el('div', 'tag', `⚠ ${reason.title}`);
+      const tag = el('div', 'tag', reason.title);
       tag.title = reason.detail;
       box.append(tag);
       root.append(box);
@@ -431,21 +373,20 @@ export function createInPageUI(): InPageUI {
         wrap.setAttribute('role', 'alertdialog');
         wrap.setAttribute('aria-label', INPAGE.scarewareAriaLabel);
         const inner = el('div', 'inner');
-        const halo = el('div', 'halo');
-        halo.append(I.bigShield());
+        const halo = I.shieldCheck();
+        halo.classList.add('symbol');
         const h1 = el('h1');
-        h1.append(el('em', '', 'This is a fake warning.'), el('br'), document.createTextNode('Your computer is fine.'));
-        const lead = el('p', 'lead', 'Microsoft and Apple never show phone numbers in warnings. Please don’t call anyone.');
+        h1.append(document.createTextNode('That warning was fake.'), el('br'), document.createTextNode('Your computer is fine.'));
+        const lead = el('p', 'lead', 'Microsoft and Apple never put phone numbers in warnings. There’s no need to call anyone.');
         const done = el('ul', 'done');
-        ['We turned the sound off', 'We closed the full screen', 'Nothing was installed on your computer'].forEach((t, i) => {
+        ['Sound turned off', 'Full screen closed', 'Nothing was installed'].forEach((t) => {
           const li = el('li');
-          li.style.animationDelay = `${250 + i * 120}ms`;
           li.append(I.check(), el('span', '', t));
           done.append(li);
         });
-        const btn = el('button', 'primary', 'Take me to safety');
+        const btn = el('button', 'primary', 'Close this page');
         const foot = el('div', 'foot');
-        foot.append(I.shield(14), el('span', '', `Protected by ${BRAND}`));
+        foot.append(I.shield(12), el('span', '', BRAND));
         inner.append(halo, h1, lead, done, btn, foot);
         wrap.append(inner);
         root.append(wrap);
@@ -462,20 +403,12 @@ export function createInPageUI(): InPageUI {
       const { p, body, close } = pill(t.tone, 'status');
       body.append(el('b', '', t.title));
       if (t.detail) body.append(el('span', '', t.detail));
-      if (t.stopped) {
-        const c = el('div', 'count');
-        c.append(I.shield(13), el('span', '', `${t.stopped.toLocaleString()} threat${t.stopped === 1 ? '' : 's'} stopped`));
-        body.append(c);
-      }
-      const bar = el('div', 'bar');
-      bar.style.animationDuration = `${ms}ms`;
-      body.append(bar);
+      if (t.stopped) body.append(el('div', 'count', `${t.stopped.toLocaleString()} ${t.stopped === 1 ? 'scam' : 'scams'} stopped so far`));
       getStack().append(p);
-      const timer = setTimeout(close, ms);
-      p.addEventListener('mouseenter', () => {
-        clearTimeout(timer);
-        bar.style.animationPlayState = 'paused';
-      });
+      // Stays while the pointer is on it, like a system notification.
+      let timer = setTimeout(close, ms);
+      p.addEventListener('mouseenter', () => clearTimeout(timer));
+      p.addEventListener('mouseleave', () => (timer = setTimeout(close, 2500)));
     },
   };
 }

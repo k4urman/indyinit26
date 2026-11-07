@@ -5,7 +5,7 @@ export default defineConfig({
   modules: ['@wxt-dev/module-react'],
   manifest: ({ browser }) => ({
     name: 'Sentinel',
-    description: 'Free, private, real-time protection from scam websites.',
+    description: 'Browse with total confidence. Free, private scam protection that runs on your device.',
     permissions: [
       'storage',
       'unlimitedStorage',

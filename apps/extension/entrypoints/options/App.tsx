@@ -40,17 +40,17 @@ function isValidDomain(d: string): boolean {
 // Color palette
 // ---------------------------------------------------------------------------
 const C = {
-  // Sentinel dark theme (matches popup, blocked page and in-page UI).
-  safe: '#3ee089',
-  caution: '#ffb547',
-  danger: '#ff5d6c',
-  primary: '#7c5cff',
-  text: '#f5f7ff',
-  muted: '#a8b0c8',
-  bg: 'rgba(255,255,255,0.04)',
-  pageBg: '#070b18',
-  border: 'rgba(255,255,255,0.10)',
-  headerBg: 'linear-gradient(135deg, #1a1440, #0b1020 60%, #062033)',
+  // Sentinel system palette (matches popup, blocked page and in-page UI).
+  safe: '#1d8a3a',
+  caution: '#bf4800',
+  danger: '#e30000',
+  primary: '#0071e3',
+  text: '#1d1d1f',
+  muted: '#6e6e73',
+  bg: '#ffffff',
+  pageBg: '#f5f5f7',
+  border: '#d2d2d7',
+  headerBg: '#1d1d1f',
 };
 
 // ---------------------------------------------------------------------------
@@ -123,7 +123,7 @@ function Toggle({
             width: 26,
             height: 26,
             borderRadius: '50%',
-            background: 'rgba(255,255,255,0.06)',
+            background: '#ffffff',
             boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
             transition: 'left 0.2s',
           }}
@@ -434,7 +434,7 @@ export default function App() {
           <div
             style={{
               padding: '12px 16px',
-              background: 'rgba(124,92,255,0.12)',
+              background: '#f5f5f7',
               borderRadius: 10,
               borderLeft: `4px solid ${C.primary}`,
             }}
@@ -512,7 +512,7 @@ export default function App() {
                 fontSize: 15,
                 border: `1px solid ${C.border}`,
                 borderRadius: 8,
-                background: 'rgba(255,255,255,0.06)',
+                background: '#ffffff',
                 cursor: 'pointer',
               }}
             >
@@ -552,7 +552,7 @@ export default function App() {
                           padding: '2px 8px',
                           borderRadius: 10,
                           background:
-                            ev.action === 'block' ? 'rgba(255,93,108,0.16)' : 'rgba(255,181,71,0.14)',
+                            ev.action === 'block' ? '#fff1f0' : '#fff6ec',
                           color: ev.action === 'block' ? C.danger : C.caution,
                           fontWeight: 600,
                           whiteSpace: 'nowrap',
@@ -582,7 +582,7 @@ export default function App() {
             style={{
               height: 44,
               padding: '0 20px',
-              background: 'rgba(255,255,255,0.06)',
+              background: '#ffffff',
               color: C.danger,
               border: `1px solid ${C.danger}`,
               borderRadius: 8,

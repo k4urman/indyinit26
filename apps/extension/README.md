@@ -1,5 +1,7 @@
 # Sentinel extension
 
+*Browse with total confidence.*
+
 WXT + TypeScript, Manifest V3 for Chrome, Edge and Firefox. See [docs/plan.md](../../docs/plan.md)
 for the product and [docs/FRONTEND_AGENT.md](../../docs/FRONTEND_AGENT.md) for the UI side.
 

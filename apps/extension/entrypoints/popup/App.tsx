@@ -13,7 +13,7 @@ import {
   type TabStatus,
   type Verdict,
 } from '@/src/shared/contract';
-import { ERRORS, OPTIONS, POPUP, SEVERITY_DESCRIPTIONS, formatEventTime } from '@/src/ui/strings';
+import { ERRORS, OPTIONS, POPUP, formatEventTime } from '@/src/ui/strings';
 import { THEME_CSS } from '@/src/ui/theme';
 
 // ---------------------------------------------------------------------------
@@ -22,94 +22,113 @@ import { THEME_CSS } from '@/src/ui/theme';
 
 const CSS = `
 ${THEME_CSS}
-body { width: 380px; min-height: 560px; overflow-x: hidden; }
-.app { position: relative; padding: 16px 16px 14px; display: grid; gap: 12px; }
-.head { display: flex; align-items: center; justify-content: space-between; position: relative; }
-.logo { display: flex; align-items: center; gap: 9px; font-weight: 750; font-size: 18px; letter-spacing: -.3px; }
-.switch { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); }
-.track { position: relative; width: 44px; height: 26px; border-radius: 99px; background: rgba(255,255,255,.14); transition: background .2s; }
-.track[aria-checked="true"] { background: linear-gradient(135deg, var(--a1), var(--a2)); }
-.knob { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.35); transition: left .2s cubic-bezier(.2,.9,.25,1.2); }
-.track[aria-checked="true"] .knob { left: 21px; }
+body { width: 380px; min-height: 540px; overflow-x: hidden; }
+.app { padding: 18px 16px 14px; display: grid; gap: 14px; }
+.head { display: flex; align-items: center; justify-content: space-between; }
+.logo { display: flex; align-items: center; gap: 7px; font-weight: 600; font-size: 17px; }
+.switch { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.track { position: relative; width: 51px; height: 31px; border-radius: 99px; background: var(--line); transition: background .2s; }
+.track[aria-checked="true"] { background: #34c759; }
+.knob { position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 3px 8px rgba(0,0,0,.15), 0 1px 1px rgba(0,0,0,.16); transition: left .2s; }
+.track[aria-checked="true"] .knob { left: 22px; }
 
-.hero { position: relative; overflow: hidden; border-radius: 20px; padding: 16px 18px; border: 1px solid rgba(124,92,255,.35);
-  background: linear-gradient(135deg, rgba(124,92,255,.22), rgba(34,211,238,.08)); animation: pop .35s cubic-bezier(.2,.9,.25,1.1) both; }
-.hero .n { font-size: 40px; font-weight: 800; letter-spacing: -1.5px; line-height: 1.05; }
-.hero .l { font-size: 13.5px; color: #cfd6ff; }
-.hero .today { position: absolute; right: 16px; top: 16px; font-size: 12px; font-weight: 650; padding: 4px 9px; border-radius: 99px; background: rgba(255,255,255,.08); color: #e6e9ff; }
-.hero .level { margin-top: 10px; font-size: 12.5px; color: var(--muted); }
-.hero .level b { color: var(--text); font-weight: 650; }
+.hero { padding: 4px 2px 0; }
+.hero .n { font-size: 48px; font-weight: 600; letter-spacing: -.03em; line-height: 1; }
+.hero .l { font-size: 15px; color: var(--muted); margin-top: 4px; }
+.hero .l b { color: var(--text); font-weight: 500; }
 
-.card { border-radius: 18px; padding: 14px; background: var(--panel); border: 1px solid var(--line); animation: rise .4s cubic-bezier(.2,.9,.25,1) both; }
-.label { font-size: 11.5px; font-weight: 700; letter-spacing: 1.1px; text-transform: uppercase; color: var(--dim); margin-bottom: 10px; }
-.site { display: grid; grid-template-columns: 52px 1fr; gap: 12px; align-items: center; }
-.ring { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; }
-.ring.safe { color: var(--safe); background: rgba(62,224,137,.12); box-shadow: 0 0 0 1px rgba(62,224,137,.35) inset, 0 0 24px rgba(62,224,137,.2); }
-.ring.caution { color: var(--warn); background: rgba(255,181,71,.12); box-shadow: 0 0 0 1px rgba(255,181,71,.35) inset, 0 0 24px rgba(255,181,71,.2); }
-.ring.danger { color: var(--danger); background: rgba(255,93,108,.12); box-shadow: 0 0 0 1px rgba(255,93,108,.4) inset, 0 0 24px rgba(255,93,108,.3); }
-.ring.unknown { color: var(--dim); background: rgba(255,255,255,.05); box-shadow: 0 0 0 1px var(--line2) inset; }
-.ring.loading svg { animation: spin 1s linear infinite; }
-.domain { font: 600 13px/1.3 ui-monospace, "SF Mono", Menlo, Consolas, monospace; color: var(--muted); word-break: break-all; }
-.verdict { font-size: 16.5px; font-weight: 700; margin-top: 2px; }
-.verdict.safe { color: var(--safe); } .verdict.caution { color: var(--warn); } .verdict.danger { color: var(--danger); } .verdict.unknown { color: var(--text); }
-.desc { font-size: 13px; color: var(--muted); margin-top: 2px; }
-.reasons { list-style: none; display: grid; gap: 6px; margin-top: 12px; }
-.reasons li { padding: 9px 11px; border-radius: 12px; background: rgba(255,255,255,.03); border: 1px solid var(--line); font-size: 13px; color: var(--muted); }
-.reasons b { display: block; color: var(--text); font-size: 13.5px; font-weight: 650; }
-.row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
-.row .btn-ghost { flex: 1; }
+.group { border-radius: 12px; background: var(--surface); overflow: hidden; animation: appear .3s both; }
+.label { font-size: 13px; color: var(--muted); padding: 0 4px 6px; }
+.site { display: grid; grid-template-columns: 34px 1fr; gap: 12px; align-items: center; padding: 14px; }
+.sym { width: 34px; height: 34px; }
+.sym.safe { color: var(--green); } .sym.caution { color: var(--orange); } .sym.danger { color: var(--red); } .sym.unknown { color: var(--dim); }
+.sym.loading { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg) } }
+.domain { font-size: 13px; color: var(--muted); word-break: break-all; }
+.verdict { font-size: 17px; font-weight: 600; }
+.desc { font-size: 13px; color: var(--muted); }
+.reasons { list-style: none; border-top: 1px solid var(--line-soft); margin-left: 14px; }
+.reasons li { padding: 10px 14px 10px 0; border-bottom: 1px solid var(--line-soft); font-size: 13px; color: var(--muted); }
+.reasons li:last-child { border-bottom: 0; }
+.reasons b { display: block; color: var(--text); font-size: 14px; font-weight: 500; }
+.row { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line-soft); }
+.row button { min-height: 44px; font-size: 14px; color: var(--link); border-right: 1px solid var(--line-soft); }
+.row button:last-child { border-right: 0; }
+.row button[aria-pressed="true"] { color: var(--text); font-weight: 600; }
+.row button:disabled { color: var(--dim); cursor: default; }
+.note { padding: 0 14px 12px; font-size: 12.5px; color: var(--muted); }
 
-.check { display: flex; gap: 8px; }
-.check input { flex: 1; min-width: 0; height: 44px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--line2); background: rgba(0,0,0,.25); font-size: 14px; }
+.check { display: flex; gap: 8px; padding: 10px; }
+.check input { flex: 1; min-width: 0; height: 40px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); font-size: 15px; }
 .check input::placeholder { color: var(--dim); }
-.check .btn-primary { min-height: 44px; padding: 0 16px; font-size: 14px; }
-.result { margin-top: 10px; padding: 10px 12px; border-radius: 12px; font-size: 13.5px; animation: rise .3s both; }
-.result.safe, .result.unknown { background: rgba(62,224,137,.10); border: 1px solid rgba(62,224,137,.3); }
-.result.caution { background: rgba(255,181,71,.10); border: 1px solid rgba(255,181,71,.3); }
-.result.danger { background: rgba(255,93,108,.10); border: 1px solid rgba(255,93,108,.35); }
-.result b { display: block; font-size: 14px; }
+.check .btn-primary { min-height: 40px; padding: 0 18px; }
+.result { margin: 0 10px 10px; padding: 10px 12px; border-radius: 10px; font-size: 13px; }
+.result.safe, .result.unknown { background: var(--green-tint); } .result.caution { background: var(--orange-tint); } .result.danger { background: var(--red-tint); }
+.result b { display: block; font-size: 14px; font-weight: 600; }
+.result.danger b { color: var(--red); } .result.caution b { color: var(--orange); } .result.safe b, .result.unknown b { color: var(--green); }
 .result span { color: var(--muted); }
-.err { margin-top: 8px; color: var(--danger); font-size: 13px; }
+.err { padding: 0 14px 12px; color: var(--red); font-size: 13px; }
 
-.events { list-style: none; display: grid; gap: 6px; }
-.events li { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; font-size: 13px; }
-.events .d { font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.events .a { font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 99px; align-self: center; }
-.events .a.block { color: #ffd6da; background: rgba(255,93,108,.16); } .events .a.warn { color: #ffe6bf; background: rgba(255,181,71,.14); }
-.events .a.highlight { color: #ddd3ff; background: rgba(124,92,255,.18); }
+.events { list-style: none; }
+.events li { display: grid; grid-template-columns: 1fr auto; gap: 0 8px; padding: 10px 14px; border-bottom: 1px solid var(--line-soft); font-size: 13px; }
+.events li:last-child { border-bottom: 0; }
+.events .d { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.events .a { font-size: 12px; color: var(--muted); }
 .events .t { grid-column: 1 / -1; color: var(--dim); font-size: 12px; }
 
-.foot { display: flex; align-items: center; justify-content: space-between; padding-top: 2px; font-size: 12.5px; color: var(--dim); }
-.foot button { color: #b9a8ff; font-weight: 650; }
-.off { filter: grayscale(.8) opacity(.6); }
+.foot { display: flex; align-items: center; justify-content: space-between; padding: 2px 4px 0; font-size: 12px; color: var(--dim); }
+.foot button { color: var(--link); font-size: 13px; }
+.off .hero, .off .group { opacity: .5; }
 `;
 
 // ---------------------------------------------------------------------------
 // Icons
 // ---------------------------------------------------------------------------
 
-function Logo({ size = 24 }: { size?: number }) {
+function Logo({ size = 20 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
-      <defs>
-        <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#7c5cff" />
-          <stop offset="1" stopColor="#22d3ee" />
-        </linearGradient>
-      </defs>
-      <path d="M12 2.5 4.5 5.5v6c0 4.6 3.1 8.6 7.5 10 4.4-1.4 7.5-5.4 7.5-10v-6z" fill="url(#lg)" />
-      <path d="m8.5 12 2.4 2.4 4.8-4.8" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+      <path fill="currentColor" d="M12 2 4 5v6.2c0 5 3.4 9.4 8 10.8 4.6-1.4 8-5.8 8-10.8V5z" />
     </svg>
   );
 }
 
+/** Solid symbols in the system style: checkmark.shield, exclamationmark.triangle, xmark.octagon. */
 function StatusIcon({ severity, loading }: { severity: Severity; loading: boolean }) {
-  const common = { width: 26, height: 26, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
-  if (loading) return <svg {...common}><path d="M12 3a9 9 0 1 1-9 9" /></svg>;
-  if (severity === 'safe') return <svg {...common}><path d="M12 2.5 4.5 5.5v6c0 4.6 3.1 8.6 7.5 10 4.4-1.4 7.5-5.4 7.5-10v-6z" /><path d="m8.5 12 2.4 2.4 4.8-4.8" /></svg>;
-  if (severity === 'danger') return <svg {...common}><path d="M8 2.5h8l5.5 5.5v8L16 21.5H8L2.5 16V8z" /><path d="M12 7.5v5.5M12 16.5h.01" /></svg>;
-  if (severity === 'caution') return <svg {...common}><path d="M12 3 2.5 19.5h19z" /><path d="M12 10v4.5M12 17.5h.01" /></svg>;
-  return <svg {...common}><circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16h.01" /></svg>;
+  const p = { width: 34, height: 34, viewBox: '0 0 24 24' };
+  if (loading)
+    return (
+      <svg {...p} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+        <path d="M12 3a9 9 0 1 1-9 9" />
+      </svg>
+    );
+  if (severity === 'safe')
+    return (
+      <svg {...p}>
+        <path fill="currentColor" d="M12 2 4 5v6.2c0 5 3.4 9.4 8 10.8 4.6-1.4 8-5.8 8-10.8V5z" />
+        <path d="m8.3 12.2 2.6 2.6 5-5.2" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  if (severity === 'danger')
+    return (
+      <svg {...p}>
+        <path fill="currentColor" d="M8.2 2h7.6L22 8.2v7.6L15.8 22H8.2L2 15.8V8.2z" />
+        <path d="m9 9 6 6m0-6-6 6" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />
+      </svg>
+    );
+  if (severity === 'caution')
+    return (
+      <svg {...p}>
+        <path fill="currentColor" d="M10.3 3.4a2 2 0 0 1 3.4 0l8.4 14.5a2 2 0 0 1-1.7 3H3.6a2 2 0 0 1-1.7-3z" />
+        <path d="M12 9v4.5M12 17h.01" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />
+      </svg>
+    );
+  return (
+    <svg {...p}>
+      <circle cx="12" cy="12" r="10" fill="currentColor" />
+      <path d="M12 7.5v5.5M12 16.5h.01" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />
+    </svg>
+  );
 }
 
 const VERDICT: Record<Severity, string> = {
@@ -236,7 +255,6 @@ export default function App() {
   return (
     <>
       <style>{CSS}</style>
-      <div className="glow" />
       <main className={`app ${settings.enabled ? '' : 'off'}`}>
         <div className="head">
           <div className="logo">
@@ -244,7 +262,7 @@ export default function App() {
             {BRAND}
           </div>
           <label className="switch">
-            {settings.enabled ? 'Protecting' : 'Paused'}
+            {settings.enabled ? 'On' : 'Off'}
             <button className="track" role="switch" aria-checked={settings.enabled} aria-label={POPUP.toggleAriaLabel} onClick={toggle}>
               <span className="knob" />
             </button>
@@ -252,103 +270,105 @@ export default function App() {
         </div>
 
         <section className="hero" aria-label="Protection summary">
-          {today > 0 && <span className="today">+{today} today</span>}
-          <div className="n grad-text">{stopped.toLocaleString()}</div>
-          <div className="l">{stopped === 1 ? 'scam stopped' : 'scams stopped'} so far</div>
-          <div className="level">
-            Protection level: <b>{stop.label}</b> · runs on your device
+          <div className="n">{stopped.toLocaleString()}</div>
+          <div className="l">
+            {stopped === 1 ? 'scam stopped' : 'scams stopped'}
+            {today > 0 ? `, ${today} today` : ''}. Protection level: <b>{stop.label}</b>.
           </div>
         </section>
 
-        <section className="card" aria-label={POPUP.currentPage}>
+        <div>
           <div className="label">{POPUP.currentPage}</div>
-          {!isWeb && !loading ? (
-            <p className="desc">{POPUP.noPage}</p>
-          ) : (
-            <>
-              <div className="site">
-                <div className={`ring ${loading ? 'unknown loading' : severity}`}>
-                  <StatusIcon severity={severity} loading={loading} />
+          <section className="group" aria-label={POPUP.currentPage}>
+            {!isWeb && !loading ? (
+              <p className="site desc" style={{ display: 'block' }}>
+                {POPUP.noPage}
+              </p>
+            ) : (
+              <>
+                <div className="site">
+                  <div className={`sym ${loading ? 'unknown loading' : severity}`}>
+                    <StatusIcon severity={severity} loading={loading} />
+                  </div>
+                  <div>
+                    <div className="verdict">{loading ? POPUP.checking : tab?.listed === 'allow' ? 'You trust this site' : VERDICT[severity]}</div>
+                    <div className="domain">{tab?.domain || ''}</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="domain">{tab?.domain || '—'}</div>
-                  <div className={`verdict ${severity}`}>{loading ? POPUP.checking : tab?.listed === 'allow' ? 'You trust this site' : VERDICT[severity]}</div>
-                  {!loading && <div className="desc">{SEVERITY_DESCRIPTIONS[severity]}</div>}
-                </div>
-              </div>
-              {v && v.reasons.length > 0 && (
-                <ul className="reasons">
-                  {v.reasons.slice(0, 3).map((r) => (
-                    <li key={r.title}>
-                      <b>{r.title}</b>
-                      {r.detail}
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {isWeb && (
-                <div className="row">
-                  <button className="btn-ghost" aria-pressed={tab?.listed === 'allow'} onClick={() => setList('allow')}>
-                    {tab?.listed === 'allow' ? '✓ Trusted' : 'Trust site'}
-                  </button>
-                  <button className="btn-ghost" aria-pressed={tab?.listed === 'block'} onClick={() => setList('block')}>
-                    {tab?.listed === 'block' ? '✓ Blocked' : 'Block site'}
-                  </button>
-                  <button className="btn-ghost" onClick={report} disabled={reported}>
-                    {reported ? 'Reported' : 'Report scam'}
-                  </button>
-                </div>
-              )}
-              {reported && (
-                <p className="desc" style={{ marginTop: 8 }}>
-                  Thanks — blocked on this computer. You can also tell the FTC at reportfraud.ftc.gov.
-                </p>
-              )}
-            </>
-          )}
-        </section>
+                {v && v.reasons.length > 0 && (
+                  <ul className="reasons">
+                    {v.reasons.slice(0, 3).map((r) => (
+                      <li key={r.title}>
+                        <b>{r.title}</b>
+                        {r.detail}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {isWeb && (
+                  <div className="row">
+                    <button aria-pressed={tab?.listed === 'allow'} onClick={() => setList('allow')}>
+                      {tab?.listed === 'allow' ? 'Trusted' : 'Trust'}
+                    </button>
+                    <button aria-pressed={tab?.listed === 'block'} onClick={() => setList('block')}>
+                      {tab?.listed === 'block' ? 'Blocked' : 'Block'}
+                    </button>
+                    <button onClick={report} disabled={reported}>
+                      {reported ? 'Reported' : 'Report'}
+                    </button>
+                  </div>
+                )}
+                {reported && <p className="note">Blocked on this computer. You can also tell the FTC at reportfraud.ftc.gov.</p>}
+              </>
+            )}
+          </section>
+        </div>
 
-        <section className="card" aria-label={POPUP.checkLinkLabel}>
+        <div>
           <div className="label">{POPUP.checkLinkLabel}</div>
-          <form
-            className="check"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void check();
-            }}
-          >
-            <input value={link} onChange={(e) => setLink(e.target.value)} placeholder={POPUP.checkLinkPlaceholder} aria-label={POPUP.checkLinkPlaceholder} spellCheck={false} />
-            <button className="btn-primary" disabled={linkBusy || !link.trim()}>
-              {linkBusy ? '…' : 'Check'}
-            </button>
-          </form>
-          {linkResult && (
-            <div className={`result ${linkResult.severity}`}>
-              <b>{LINK_VERDICT[linkResult.severity]}</b>
-              <span>{linkResult.reasons[0] ? `${linkResult.reasons[0].title}. ${linkResult.reasons[0].detail}` : `${linkResult.domain} isn't on any scam list and looks normal.`}</span>
-            </div>
-          )}
-          {error && <p className="err">{error}</p>}
-        </section>
+          <section className="group" aria-label={POPUP.checkLinkLabel}>
+            <form
+              className="check"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void check();
+              }}
+            >
+              <input value={link} onChange={(e) => setLink(e.target.value)} placeholder={POPUP.checkLinkPlaceholder} aria-label={POPUP.checkLinkPlaceholder} spellCheck={false} />
+              <button className="btn-primary" disabled={linkBusy || !link.trim()}>
+                Check
+              </button>
+            </form>
+            {linkResult && (
+              <div className={`result ${linkResult.severity}`}>
+                <b>{LINK_VERDICT[linkResult.severity]}</b>
+                <span>{linkResult.reasons[0] ? `${linkResult.reasons[0].title}. ${linkResult.reasons[0].detail}` : `${linkResult.domain} isn’t on any scam list and looks normal.`}</span>
+              </div>
+            )}
+            {error && <p className="err">{error}</p>}
+          </section>
+        </div>
 
         {recent.length > 0 && (
-          <section className="card" aria-label={POPUP.recentEvents}>
+          <div>
             <div className="label">{POPUP.recentEvents}</div>
-            <ul className="events">
-              {recent.map((e) => (
-                <li key={e.id}>
-                  <span className="d">{e.reasons[0]?.title ?? e.domain}</span>
-                  <span className={`a ${e.action}`}>{OPTIONS.eventAction[e.userOverride ?? e.action] ?? e.action}</span>
-                  <span className="t">{formatEventTime(e.ts)}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
+            <section className="group" aria-label={POPUP.recentEvents}>
+              <ul className="events">
+                {recent.map((e) => (
+                  <li key={e.id}>
+                    <span className="d">{e.reasons[0]?.title ?? e.domain}</span>
+                    <span className="a">{OPTIONS.eventAction[e.userOverride ?? e.action] ?? e.action}</span>
+                    <span className="t">{formatEventTime(e.ts)}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </div>
         )}
 
         <div className="foot">
-          <span>🔒 Nothing leaves your computer</span>
-          <button onClick={openSettings}>Settings →</button>
+          <span>Checked on this device.</span>
+          <button onClick={openSettings}>Settings</button>
         </div>
       </main>
     </>

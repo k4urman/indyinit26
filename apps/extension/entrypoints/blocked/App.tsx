@@ -7,53 +7,36 @@ import { THEME_CSS } from '@/src/ui/theme';
 
 const CSS = `
 ${THEME_CSS}
-body { min-height: 100vh; }
-.page { position: relative; min-height: 100vh; display: grid; place-items: center; padding: 32px 16px; overflow: hidden; }
-.bg { position: fixed; inset: 0; pointer-events: none;
-  background: radial-gradient(700px 420px at 50% 0%, rgba(255,93,108,.22), transparent 65%), radial-gradient(700px 500px at 85% 100%, rgba(124,92,255,.22), transparent 60%); }
-.card { position: relative; width: min(600px, 100%); border-radius: 28px; padding: 34px 34px 26px; text-align: center;
-  background: rgba(15,20,38,.82); border: 1px solid var(--line); box-shadow: 0 40px 100px rgba(0,0,0,.55);
-  backdrop-filter: blur(24px) saturate(160%); animation: pop .45s cubic-bezier(.2,.9,.25,1.12) both; }
-.brand { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: var(--muted); font-size: 14px; }
-.badge { width: 92px; height: 92px; margin: 22px auto 18px; border-radius: 28px; display: grid; place-items: center; color: var(--danger);
-  background: linear-gradient(135deg, rgba(255,93,108,.24), rgba(255,93,108,.05)); border: 1px solid rgba(255,93,108,.4);
-  box-shadow: 0 0 60px rgba(255,93,108,.35); }
-h1 { font-size: 34px; line-height: 1.15; letter-spacing: -.8px; font-weight: 800; }
-.sub { color: var(--muted); font-size: 17px; margin: 10px auto 0; max-width: 460px; }
-.domain { display: inline-block; margin-top: 16px; font: 600 15px ui-monospace, "SF Mono", Menlo, Consolas, monospace; color: #ffc2c8;
-  background: rgba(255,93,108,.1); border: 1px solid rgba(255,93,108,.28); padding: 6px 12px; border-radius: 10px; word-break: break-all; }
-.reasons { list-style: none; text-align: left; display: grid; gap: 10px; margin: 24px 0; }
-.reasons li { display: grid; grid-template-columns: 22px 1fr; gap: 12px; padding: 14px 16px; border-radius: 16px; background: rgba(255,255,255,.035); border: 1px solid var(--line);
-  animation: rise .45s cubic-bezier(.2,.9,.25,1) both; }
-.reasons svg { color: var(--danger); margin-top: 2px; }
-.reasons b { display: block; font-size: 16.5px; }
-.reasons span { display: block; color: var(--muted); font-size: 15px; }
-.actions { display: grid; gap: 10px; }
-.actions .btn-primary { min-height: 58px; font-size: 18px; }
-.secondary { min-height: 50px; border-radius: 14px; font-weight: 600; color: var(--muted); border: 1px solid var(--line2); background: rgba(255,255,255,.03); }
-.secondary:disabled { opacity: .45; cursor: default; }
-.warn { font-size: 13.5px; color: var(--warn); }
-.mistake { margin-top: 6px; font-size: 14px; color: var(--dim); text-decoration: underline; text-underline-offset: 3px; }
-.foot { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); color: var(--dim); font-size: 13px; }
+html, body { background: var(--surface); }
+.page { min-height: 100vh; display: grid; place-items: center; padding: 48px 22px; }
+.card { width: min(560px, 100%); text-align: center; animation: appear .4s cubic-bezier(.25,.1,.25,1) both; }
+.symbol { width: 72px; height: 72px; margin: 0 auto 22px; color: var(--red); }
+h1 { font-size: 40px; line-height: 1.1; letter-spacing: -.02em; font-weight: 600; }
+.sub { color: var(--muted); font-size: 19px; line-height: 1.42; margin: 12px auto 0; max-width: 480px; }
+.domain { margin-top: 10px; font-size: 15px; color: var(--muted); word-break: break-all; }
+.reasons { list-style: none; text-align: left; margin: 32px 0; border-top: 1px solid var(--line); }
+.reasons li { padding: 16px 0; border-bottom: 1px solid var(--line); }
+.reasons b { display: block; font-size: 17px; font-weight: 600; }
+.reasons span { display: block; color: var(--muted); font-size: 15px; margin-top: 2px; }
+.actions { display: grid; gap: 8px; justify-items: center; }
+.actions .btn-primary { min-height: 50px; padding: 0 30px; font-size: 17px; }
+.secondary { min-height: 40px; padding: 0 12px; color: var(--link); font-size: 15px; }
+.secondary:disabled { color: var(--dim); cursor: default; }
+.secondary:not(:disabled):hover, .mistake:hover { text-decoration: underline; }
+.warn { font-size: 13px; color: var(--orange); max-width: 380px; }
+.mistake { font-size: 13px; color: var(--dim); }
+.foot { margin-top: 36px; display: flex; gap: 6px; justify-content: center; align-items: center; color: var(--dim); font-size: 12px; }
 .center { color: var(--muted); font-size: 17px; text-align: center; }
 `;
 
 function Logo() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
-      <defs>
-        <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#7c5cff" />
-          <stop offset="1" stopColor="#22d3ee" />
-        </linearGradient>
-      </defs>
-      <path d="M12 2.5 4.5 5.5v6c0 4.6 3.1 8.6 7.5 10 4.4-1.4 7.5-5.4 7.5-10v-6z" fill="url(#lg)" />
-      <path d="m8.5 12 2.4 2.4 4.8-4.8" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+    <svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="currentColor" d="M12 2 4 5v6.2c0 5 3.4 9.4 8 10.8 4.6-1.4 8-5.8 8-10.8V5z" />
     </svg>
   );
 }
 
-const icon = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, viewBox: '0 0 24 24' };
 
 export default function App() {
   const blockId = new URLSearchParams(location.search).get('id');
@@ -111,50 +94,37 @@ export default function App() {
     <>
       <style>{CSS}</style>
       <div className="page">
-        <div className="bg" />
         {!page && !error ? (
           <p className="center">Loading…</p>
         ) : (
           <main className="card" role="alert">
-            <div className="brand">
-              <Logo />
-              {BRAND}
-            </div>
-            <div className="badge">
-              <svg width="44" height="44" {...icon}>
-                <path d="M8 2.5h8l5.5 5.5v8L16 21.5H8L2.5 16V8z" />
-                <path d="M12 7.5v5.5M12 16.5h.01" />
-              </svg>
-            </div>
-            <h1>{error ? 'This page was blocked' : v?.reasons[0]?.title ?? BLOCKED.defaultTitle}</h1>
-            <p className="sub">{error || `${BRAND} stopped this page before it could load. Nothing was sent to it.`}</p>
+            <svg className="symbol" viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="currentColor" d="M8.2 2h7.6L22 8.2v7.6L15.8 22H8.2L2 15.8V8.2z" />
+              <path d="m9 9 6 6m0-6-6 6" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />
+            </svg>
+            <h1>{error ? 'This page was blocked.' : `${v?.reasons[0]?.title ?? BLOCKED.defaultTitle}.`.replace(/\.\.$/, '.')}</h1>
+            <p className="sub">{error || `${BRAND} stopped this page before it loaded. Nothing was sent to it.`}</p>
             {v?.domain && <div className="domain">{v.domain}</div>}
 
             {v && v.reasons.length > 0 && (
               <ul className="reasons">
-                {v.reasons.map((r, i) => (
-                  <li key={r.title} style={{ animationDelay: `${120 + i * 80}ms` }}>
-                    <svg width="20" height="20" {...icon}>
-                      <circle cx="12" cy="12" r="9" />
-                      <path d="M12 8v5M12 16h.01" />
-                    </svg>
-                    <div>
-                      <b>{r.title}</b>
-                      <span>{r.detail}</span>
-                    </div>
+                {v.reasons.map((r) => (
+                  <li key={r.title}>
+                    <b>{r.title}</b>
+                    <span>{r.detail}</span>
                   </li>
                 ))}
               </ul>
             )}
 
-            <div className="actions" style={{ marginTop: v ? 0 : 24 }}>
+            <div className="actions" style={{ marginTop: v ? 0 : 28 }}>
               <button className="btn-primary" autoFocus onClick={goToSafety}>
-                {v?.safeAlternative?.label ?? 'Take me to safety'}
+                {v?.safeAlternative ? `Go to ${v.safeAlternative.url.replace(/^https?:\/\/|\/$/g, '')}` : 'Go back to safety'}
               </button>
               {page?.canContinue && (
                 <>
                   <button className="secondary" disabled={countdown > 0} onClick={continueAnyway}>
-                    {countdown > 0 ? BLOCKED.countdown(countdown) : 'Continue anyway'}
+                    {countdown > 0 ? `Continue anyway (${countdown})` : 'Continue anyway'}
                   </button>
                   {countdown === 0 && <p className="warn">{BLOCKED.continueWarning}</p>}
                   <button className="mistake" onClick={markSafe}>
@@ -163,7 +133,10 @@ export default function App() {
                 </>
               )}
             </div>
-            <div className="foot">🔒 Checked on your device. Nothing you type leaves your computer.</div>
+            <div className="foot">
+              <Logo />
+              {BRAND} · Checked on this device
+            </div>
           </main>
         )}
       </div>
