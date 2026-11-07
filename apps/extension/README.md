@@ -2,6 +2,9 @@
 
 *Browse with total confidence.*
 
+> **Handing this off / picking it up?** Read [docs/HANDOFF.md](../../docs/HANDOFF.md) first —
+> it covers status, commands, the install steps, known gaps and the sandbox quirks.
+
 WXT + TypeScript, Manifest V3 for Chrome, Edge and Firefox. See [docs/plan.md](../../docs/plan.md)
 for the product and [docs/FRONTEND_AGENT.md](../../docs/FRONTEND_AGENT.md) for the UI side.
 
