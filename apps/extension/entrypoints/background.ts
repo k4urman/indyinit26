@@ -1,5 +1,5 @@
 import { browser, type Browser } from 'wxt/browser';
-import { ARCHIVE_EXTENSIONS, EXECUTABLE_EXTENSIONS, REMOTE_ACCESS_TOOLS } from '@/src/data/lists';
+import { ARCHIVE_EXTENSIONS, EXECUTABLE_EXTENSIONS, REMOTE_ACCESS_NAMES, REMOTE_ACCESS_TOOLS, REMOTE_ACCESS_VENDORS } from '@/src/data/lists';
 import { isAnalysable, parseUrl } from '@/src/detectors/domain';
 import { analyse } from '@/src/engine/analyse';
 import { extUrl } from '@/src/engine/ext-url';
@@ -218,32 +218,41 @@ async function onDownload(item: Browser.downloads.DownloadItem): Promise<void> {
   const ext = extOf(name);
   const executable = EXECUTABLE_EXTENSIONS.has(ext) || ARCHIVE_EXTENSIONS.has(ext) || /\.(pdf|docx?|jpg|png)\.(exe|scr|js|vbs|bat)$/i.test(name);
 
-  const tabId = await sourceTab(item);
-  const tab = tabId !== undefined ? await getTab(tabId) : null;
-  const pageUrl = item.referrer || tab?.url || item.url;
-  const a = await analyse(pageUrl, settings);
-  const lastScare = ((await session.get(LAST_SCARE_KEY))[LAST_SCARE_KEY] as number | undefined) ?? 0;
-  const pageScore = Math.max(tab?.verdict?.score ?? 0, a?.result.score ?? 0);
-
-  const pause = shouldPauseDownload({
-    settings,
-    pageScore,
-    trusted: a?.trusted ?? false,
-    executable,
-    remoteAccessTool: Boolean(rmm),
-    afterScarePage: Date.now() - lastScare < SCARE_WINDOW_MS || Boolean(tab?.scareware),
-  });
-  if (!pause) return;
-
+  // Pause first, judge second: a 5 MB installer finishes in under a second on fast internet.
+  const candidate = Boolean(rmm) || executable || settings.aggressiveness >= 100;
+  if (!candidate) return;
   try {
     await browser.downloads.pause(item.id);
   } catch {
     return; // Already finished (small file); nothing to stop.
   }
 
-  const reasons = [rmm ? R.remoteAccess(rmm.replace(/\b\w/g, (c) => c.toUpperCase())) : R.executable(name), ...(tab?.verdict?.reasons ?? [])].slice(0, 3);
+  const tabId = await sourceTab(item);
+  const tab = tabId !== undefined ? await getTab(tabId) : null;
+  const pageUrl = item.referrer || tab?.url || item.url;
+  const fileUrl = item.finalUrl || item.url;
+  const [a, fileA] = await Promise.all([analyse(pageUrl, settings), analyse(fileUrl, settings)]);
+  const lastScare = ((await session.get(LAST_SCARE_KEY))[LAST_SCARE_KEY] as number | undefined) ?? 0;
+  // The page that started it and the address the file actually comes from both count.
+  const pageScore = Math.max(tab?.verdict?.score ?? 0, a?.result.score ?? 0, fileA?.result.score ?? 0);
+
+  const pause = shouldPauseDownload({
+    settings,
+    pageScore,
+    trusted: (a?.trusted ?? false) && (fileA?.trusted ?? true),
+    executable,
+    remoteAccessTool: Boolean(rmm),
+    afterScarePage: Date.now() - lastScare < SCARE_WINDOW_MS || Boolean(tab?.scareware),
+    fromVendor: fileA ? REMOTE_ACCESS_VENDORS.has(fileA.parsed.domain) : false,
+  });
+  if (!pause) {
+    await browser.downloads.resume(item.id).catch(() => {});
+    return;
+  }
+
+  const reasons = [rmm ? R.remoteAccess(REMOTE_ACCESS_NAMES[rmm] ?? rmm.replace(/\b\w/g, (c) => c.toUpperCase())) : R.executable(name), ...(tab?.verdict?.reasons ?? [])].slice(0, 3);
   const verdict: Verdict = {
-    url: item.finalUrl || item.url, domain: a?.parsed.domain ?? '', severity: 'caution', score: pageScore, reasons,
+    url: fileUrl, domain: fileA?.parsed.domain ?? a?.parsed.domain ?? '', severity: 'caution', score: pageScore, reasons,
     depth: 'basic', checkedAt: Date.now(),
   };
   const event = await record(tabId, {
@@ -304,10 +313,13 @@ async function handleUi(req: Request): Promise<ResponseFor<Request>> {
       const [tab, browserTab, lists] = await Promise.all([getTab(req.tabId), browser.tabs.get(req.tabId), getLists()]);
       const url = browserTab.url ?? tab?.url ?? '';
       const parsed = parseUrl(url);
+      let verdict = tab?.verdict && parsed && tab.verdict.domain === parsed.domain ? tab.verdict : null;
+      // No page check yet (page still loading, or opened before install): judge the address now.
+      if (!verdict && isAnalysable(url)) verdict = (await analyse(url, await getSettings()))?.verdict ?? null;
       const status: TabStatus = {
         url,
         domain: parsed?.domain ?? '',
-        verdict: tab?.verdict && parsed && tab.verdict.domain === parsed.domain ? tab.verdict : null,
+        verdict,
         listed: parsed ? lookup(lists, parsed.hostname) : null,
         recent: tab?.events ?? [],
         incognito: browserTab.incognito,
@@ -430,6 +442,25 @@ function onMessage(msg: unknown, sender: Browser.runtime.MessageSender, sendResp
 
 export default defineBackground(() => {
   preloadReputation();
+
+  // Tabs already open when Sentinel is installed or the browser starts get no content
+  // scripts by themselves; inject them so protection doesn't wait for a reload.
+  const protectOpenTabs = async () => {
+    const scripts = browser.runtime.getManifest().content_scripts ?? [];
+    for (const t of await browser.tabs.query({ url: ['http://*/*', 'https://*/*'] })) {
+      if (t.id === undefined || t.discarded) continue;
+      for (const cs of scripts) {
+        await browser.scripting
+          .executeScript({
+            target: { tabId: t.id, allFrames: Boolean(cs.all_frames) },
+            files: (cs.js ?? []) as never, // manifest paths, not typed as public paths
+            world: (cs as { world?: 'MAIN' | 'ISOLATED' }).world ?? 'ISOLATED',
+          })
+          .catch(() => {}); // Pages we're not allowed into (web store, PDF viewer…).
+      }
+    }
+  };
+  browser.runtime.onInstalled.addListener(() => void protectOpenTabs());
 
   browser.runtime.onInstalled.addListener(() => {
     browser.contextMenus.create({ id: 'check-link', title: 'Check this link for scams', contexts: ['link'] });

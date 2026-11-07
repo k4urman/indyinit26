@@ -106,12 +106,15 @@ export function shouldPauseDownload(opts: {
   executable: boolean;
   remoteAccessTool: boolean;
   afterScarePage: boolean;
+  /** Downloaded from the tool's own publisher (anydesk.com…). */
+  fromVendor?: boolean;
 }): boolean {
   const { settings: s } = opts;
   if (!s.enabled || !s.categories.downloads) return false;
   const stop = stopIndex(s.aggressiveness);
   const { warnAt } = thresholds(s.aggressiveness);
-  if (opts.remoteAccessTool && (opts.afterScarePage || stop >= 2)) return true;
+  // Remote-access tools: always after a scare page; from Balanced up, unless from the publisher.
+  if (opts.remoteAccessTool && (opts.afterScarePage || (stop >= 1 && !opts.fromVendor) || stop >= 2)) return true;
   if (opts.trusted) return false;
   if (stop === 0) return false;
   if (stop === 1) return opts.executable && opts.pageScore >= warnAt;

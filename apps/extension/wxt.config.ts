@@ -15,6 +15,7 @@ export default defineConfig({
       'contextMenus',
       'notifications',
       'alarms',
+      'scripting', // protect tabs that were already open when Sentinel was installed
     ],
     host_permissions: ['<all_urls>'],
     // Toolbar button for the badge; the popup entrypoint adds default_popup.

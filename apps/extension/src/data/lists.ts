@@ -93,6 +93,22 @@ export const REMOTE_ACCESS_TOOLS = [
   'beyondtrust', 'atera', 'action1', 'netsupport', 'remoteutilities', 'dwservice', 'ultravnc', 'tightvnc', 'realvnc',
 ];
 
+/** How the tools write their own names, for explanations. */
+export const REMOTE_ACCESS_NAMES: Record<string, string> = {
+  anydesk: 'AnyDesk', teamviewer: 'TeamViewer', screenconnect: 'ScreenConnect', connectwise: 'ConnectWise', logmein: 'LogMeIn',
+  gotoassist: 'GoTo Assist', 'goto resolve': 'GoTo Resolve', ultraviewer: 'UltraViewer', rustdesk: 'RustDesk', splashtop: 'Splashtop',
+  'zoho assist': 'Zoho Assist', remotepc: 'RemotePC', aeroadmin: 'AeroAdmin', ammyy: 'Ammyy Admin', quickassist: 'Quick Assist',
+  netsupport: 'NetSupport', ultravnc: 'UltraVNC', tightvnc: 'TightVNC', realvnc: 'RealVNC',
+};
+
+/** Where the remote-access tools are really published; downloads from these aren't "lures". */
+export const REMOTE_ACCESS_VENDORS = new Set([
+  'anydesk.com', 'teamviewer.com', 'screenconnect.com', 'connectwise.com', 'logmein.com', 'goto.com', 'gotoassist.com',
+  'ultraviewer.net', 'supremocontrol.com', 'rustdesk.com', 'splashtop.com', 'zoho.com', 'remotepc.com', 'aeroadmin.com',
+  'ammyy.com', 'microsoft.com', 'beyondtrust.com', 'atera.com', 'action1.com', 'netsupportsoftware.com',
+  'remoteutilities.com', 'dwservice.net', 'uvnc.com', 'tightvnc.com', 'realvnc.com', 'github.com',
+]);
+
 /** File extensions that run code. */
 export const EXECUTABLE_EXTENSIONS = new Set([
   'exe', 'msi', 'msix', 'appx', 'scr', 'bat', 'cmd', 'com', 'pif', 'vbs', 'vbe', 'js', 'jse', 'wsf', 'wsh', 'ps1',

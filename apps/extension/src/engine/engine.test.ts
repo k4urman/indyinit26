@@ -287,6 +287,9 @@ describe('policy', () => {
     const base = { pageScore: 0, trusted: false, executable: true };
     expect(shouldPauseDownload({ settings: settings(0), ...base, remoteAccessTool: true, afterScarePage: true })).toBe(true);
     expect(shouldPauseDownload({ settings: settings(0), ...base, remoteAccessTool: false, afterScarePage: false })).toBe(false);
+    // Balanced: AnyDesk from a random site pauses even without a scare page; from anydesk.com it doesn't.
+    expect(shouldPauseDownload({ settings: settings(33), ...base, remoteAccessTool: true, afterScarePage: false })).toBe(true);
+    expect(shouldPauseDownload({ settings: settings(33), ...base, trusted: true, remoteAccessTool: true, afterScarePage: false, fromVendor: true })).toBe(false);
     expect(shouldPauseDownload({ settings: settings(66), ...base, remoteAccessTool: false, afterScarePage: false })).toBe(true);
     expect(shouldPauseDownload({ settings: settings(66), ...base, trusted: true, remoteAccessTool: false, afterScarePage: false })).toBe(false);
   });

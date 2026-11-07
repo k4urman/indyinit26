@@ -61,6 +61,20 @@ try {
     return page;
   };
 
+  // 0. Remote-access tool straight from the demo start page (no scare page first) must pause.
+  {
+    const start = await ctx.newPage();
+    await start.goto(`http://start.sentinel.test:${PORT}/`);
+    await start.waitForTimeout(800);
+    await start.click('a[href$="AnyDesk.exe"]');
+    await start.waitForTimeout(2000);
+    const d = (await sw.evaluate(async () => chrome.downloads.search({}))).find((x) => /anydesk/i.test(`${x.filename} ${x.url}`));
+    await shot(start, '4b-anydesk-from-start');
+    check('anydesk from a non-vendor site: paused even without a scare page', d?.paused === true, d ? `state ${d.state}, paused ${d.paused}` : 'no download seen');
+    if (d) await sw.evaluate(async (id) => { await chrome.downloads.cancel(id).catch(() => {}); await chrome.downloads.erase({ id }); }, d.id);
+    await start.close();
+  }
+
   // 1. Lookalike bank login.
   {
     const page = await visit('chase-secure-verify.com');
