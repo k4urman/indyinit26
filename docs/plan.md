@@ -10,6 +10,8 @@ Cross-browser (Chrome, Edge, Firefox) extension that detects and blocks scam sit
 
 | Question | Decision | Notes |
 | --- | --- | --- |
+| Deadline | **Today, 5 PM** | Phase 1 only |
+| UI ↔ engine interface | `apps/extension/src/shared/contract.ts` | Frontend brief: `docs/FRONTEND_AGENT.md` |
 | Persona | **Both** older adults and young adults, plus **children** (from the whiteboard) | One product, three presets: "Family/Child", "Standard", "Power user" |
 | Scam coverage | **Detect all scam sites and scam behavior**, not a fixed list | Achieved with a generic multi-signal engine (Section 4), not one detector per scam type. We still demo 3 flagship scenarios. |
 | Browsers | **Chrome + Edge + Firefox** (Safari later) | One codebase via WXT; Manifest V3 everywhere |
@@ -42,7 +44,7 @@ Key facts behind it (sources in the team doc):
 | P2 | **Sketchy-element highlighting** | Outlines risky elements (fake download buttons, off-domain login forms, fake "virus" dialogs, phone numbers in scare pages, crypto deposit boxes) with a tooltip saying why | Content script DOM scan + MutationObserver; Shadow-DOM overlay so pages can't restyle it |
 | P3 | **Download scanning** | Pauses risky downloads and asks for confirmation | `downloads.onCreated` → pause → check source URL, referrer page score, file type (.exe/.msi/.scr/.apk/.dmg, double extensions), remote-access tools (AnyDesk, TeamViewer, ScreenConnect) after a scare page; URL reputation lookup |
 | P4 | **Transaction scanning** | Warns before entering card/bank/crypto details on risky sites | Detect payment fields (autocomplete `cc-*`, IBAN/routing patterns, wallet-connect, seed-phrase inputs), gift-card/wire instructions, combined with page risk score |
-| P5 | **Upload & personal-info guard** | Warns before uploading files or typing personal data on untrusted sites | Listen for `input[type=file]` change and paste/typing into fields; local regex + checksum detectors for SSN, card (Luhn), passport, phone, email, DOB, seed phrases. **Never store or transmit the values** |
+| P5 | **Upload & personal-info guard** | Warns before uploading files or typing personal data on untrusted sites | Listen for `input[type=file]` change and paste/typing into fields; local regex + checksum detectors for SSN, card (Luhn), passport, seed phrases — **not** email/phone/DOB (too common; would fire on every signup form). Only on pages already scored risky. **Never store or transmit the values** |
 | P6 | **Scareware lock breaker** | Escapes fake "your computer is locked" pages | Detect fullscreen/keyboard-lock/pointer-lock calls, autoplay audio, `alert`/`beforeunload` loops → exit fullscreen, mute tab, show explanation |
 | P7 | **Link checker** | Check any link before opening | Right-click context menu + popup paste box |
 | P8 | **Ad removal / covering (optional)** | Hide ads and malvertising | `declarativeNetRequest` static rulesets from EasyList/EasyPrivacy (+ cosmetic CSS). Off by default; "cover" mode greys ads instead of removing |
@@ -70,7 +72,7 @@ Key facts behind it (sources in the team doc):
 
 ### 2.3 Common features
 
-- **Whitelist (trusted) & blocklist (never allow)** — user lists, synced across devices via `storage.sync` (small) with overflow in `storage.local`; wildcard and domain-level entries; import/export.
+- **Whitelist (trusted) & blocklist (never allow)** — user lists, kept in `storage.local` only (sync would send the trusted-site list to the browser vendor; maybe opt-in later); wildcard and domain-level entries; import/export.
 - **Presets for audiences**: Child (Paranoid + PIN-locked settings + block adult/gambling categories optional), Older adult (Strict + large text + simple language), Standard (Balanced).
 - **Plain-language explanations** everywhere, reading level ~grade 6, localized.
 
@@ -140,7 +142,7 @@ No single trick catches every scam, so the engine combines independent signal fa
 
 ### 4.2 Scoring
 
-`score = clamp( Σ (weight_i × signal_i) − allowlist_credit , 0, 100 )`, with **combination rules** (e.g., brand mismatch AND credential form ⇒ min 85). Weights start hand-tuned, then are fitted with logistic regression on the labeled dataset (Section 7). Each signal carries a human-readable reason string; the top 3 are shown to the user.
+`score = clamp( Σ (weight_i × signal_i) − allowlist_credit , 0, 100 )`, with **combination rules** (e.g., brand mismatch AND credential form ⇒ min 85). Weights start hand-tuned, then are fitted with logistic regression on the labeled dataset (Section 7). Each signal carries a human-readable reason; the top 3 are shown to the user. The numeric score is never shown.
 
 ### 4.3 Scam coverage map
 
@@ -164,7 +166,7 @@ No single trick catches every scam, so the engine combines independent signal fa
 | --- | --- | --- |
 | Extension framework | **WXT** (Vite-based) + TypeScript | Builds Chrome, Edge, Firefox (and Safari later) from one codebase; handles MV3 differences (service worker vs Firefox event page) |
 | UI | React + Tailwind (or Preact for smaller bundles); Radix UI primitives for accessible slider/toggles | Fast to build, accessible |
-| State/storage | `browser.storage.local` + `storage.sync` via `webextension-polyfill`; Dexie (IndexedDB) for the block log | Cross-browser, persistent |
+| State/storage | `browser.storage.local` via WXT's `browser`; Dexie (IndexedDB) for the block log | Cross-browser, persistent |
 | Domain parsing | `tldts`, `punycode`, Unicode confusables table | Correct registrable domains, homoglyph detection |
 | Fuzzy matching | Damerau-Levenshtein + keyboard-distance | Lookalike domains |
 | Blocking | `declarativeNetRequest` (static + dynamic rules), `webNavigation`, `downloads` | MV3-compliant |
@@ -213,7 +215,7 @@ Privacy rules:
 - Strict CSP; no `eval`; sanitize every string rendered in overlays.
 - Overlays in closed Shadow DOM, top z-index, re-attached if removed (pages can't hide warnings).
 - MAIN-world hooks are minimal and frozen to resist tampering.
-- Settings PIN (Child preset) stored as salted hash.
+- Settings PIN (Child preset) stored as salted hash. It is a speed bump, not a lock: a child can still remove the extension. Real lock-down is `storage.managed` (Phase 4).
 - Dependency scanning (Dependabot, `npm audit`), SBOM per release, signed tags.
 - Pre-launch security review + public `SECURITY.md` and bug-bounty-lite (hall of fame).
 
