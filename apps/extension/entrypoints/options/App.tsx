@@ -1,6 +1,7 @@
 import { browser, type Browser } from 'wxt/browser';
 import { EMPTY_STATS, IS_EXTENSION, readStorage, sendMsg, totalBlocked, writeStorage } from '@/src/ui/bridge';
 import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { LOGO_32 } from '@/src/ui/logo-b64';
 import {
   BRAND,
   DEFAULT_SETTINGS,
@@ -41,16 +42,17 @@ function isValidDomain(d: string): boolean {
 // ---------------------------------------------------------------------------
 const C = {
   // Sentinel system palette (matches popup, blocked page and in-page UI).
-  safe: '#1d8a3a',
-  caution: '#bf4800',
-  danger: '#e30000',
-  primary: '#0071e3',
-  text: '#1d1d1f',
-  muted: '#6e6e73',
+  safe: '#16a34a',
+  caution: '#d97706',
+  danger: '#dc2626',
+  primary: '#7c3aed',
+  primaryHover: '#6d28d9',
+  text: '#1e1030',
+  muted: '#6b5fa6',
   bg: '#ffffff',
-  pageBg: '#f5f5f7',
-  border: '#d2d2d7',
-  headerBg: '#1d1d1f',
+  pageBg: '#f8f4ff',
+  border: '#ddd6fe',
+  headerBg: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)',
 };
 
 // ---------------------------------------------------------------------------
@@ -368,7 +370,16 @@ export default function App() {
           justifyContent: 'space-between',
         }}
       >
-        <span style={{ fontWeight: 700, fontSize: 24 }}>{OPTIONS.pageTitle}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <img
+            src={LOGO_32}
+            width={32}
+            height={32}
+            alt="Sentinel"
+            style={{ borderRadius: 8, background: '#fff', padding: 2, flexShrink: 0 }}
+          />
+          <span style={{ fontWeight: 700, fontSize: 24 }}>{OPTIONS.pageTitle}</span>
+        </div>
         {savedFlash && (
           <span
             style={{
@@ -434,7 +445,7 @@ export default function App() {
           <div
             style={{
               padding: '12px 16px',
-              background: '#f5f5f7',
+              background: C.pageBg,
               borderRadius: 10,
               borderLeft: `4px solid ${C.primary}`,
             }}
