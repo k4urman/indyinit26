@@ -22,6 +22,10 @@ export const SITES = {
 export function startFixtureServer(port = 8765) {
   const server = createServer((req, res) => {
     const host = (req.headers.host ?? '').split(':')[0];
+    if (req.url === '/sentinel.png') {
+      res.writeHead(200, { 'content-type': 'image/png' }).end(readFileSync(join(FIX, 'sentinel.png')));
+      return;
+    }
     if (req.url?.toLowerCase().endsWith('.exe')) {
       // A slow fake installer, so the download is still running when the engine pauses it.
       res.writeHead(200, { 'content-type': 'application/octet-stream', 'content-disposition': 'attachment; filename="AnyDesk.exe"' });
