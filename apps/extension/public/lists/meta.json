@@ -1,0 +1,11 @@
+{
+  "builtAt": "2026-11-07T15:27:45.875Z",
+  "knownBad": 388531,
+  "skippedProtected": 3780,
+  "topSites": 10000,
+  "sources": {
+    "openphish": "https://raw.githubusercontent.com/openphish/public_feed/refs/heads/main/feed.txt",
+    "phishingDatabase": "https://raw.githubusercontent.com/Phishing-Database/Phishing.Database/master/phishing-domains-ACTIVE.txt",
+    "tranco": "https://tranco-list.eu/top-1m.csv.zip"
+  }
+}
