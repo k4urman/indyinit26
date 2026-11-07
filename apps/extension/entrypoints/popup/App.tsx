@@ -1,670 +1,356 @@
 import { browser, type Browser } from 'wxt/browser';
 import { EMPTY_STATS, IS_EXTENSION, readStorage, sendMsg, totalBlocked, writeStorage } from '@/src/ui/bridge';
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   BRAND,
   DEFAULT_SETTINGS,
+  STOPS,
+  STORAGE_KEYS,
+  type BlockEvent,
   type Settings,
+  type Severity,
+  type Stats,
   type TabStatus,
   type Verdict,
-  type BlockEvent,
-  type Stats,
-  type Severity,
-  STORAGE_KEYS,
 } from '@/src/shared/contract';
-import { OPTIONS, POPUP, BTN, SEVERITY_LABELS, SEVERITY_DESCRIPTIONS, ERRORS, formatEventTime } from '@/src/ui/strings';
+import { ERRORS, OPTIONS, POPUP, SEVERITY_DESCRIPTIONS, formatEventTime } from '@/src/ui/strings';
+import { THEME_CSS } from '@/src/ui/theme';
 
 // ---------------------------------------------------------------------------
-// Helpers: chrome or mock
+// Styles (popup only; shared tokens in src/ui/theme.ts)
 // ---------------------------------------------------------------------------
 
+const CSS = `
+${THEME_CSS}
+body { width: 380px; min-height: 560px; overflow-x: hidden; }
+.app { position: relative; padding: 16px 16px 14px; display: grid; gap: 12px; }
+.head { display: flex; align-items: center; justify-content: space-between; position: relative; }
+.logo { display: flex; align-items: center; gap: 9px; font-weight: 750; font-size: 18px; letter-spacing: -.3px; }
+.switch { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); }
+.track { position: relative; width: 44px; height: 26px; border-radius: 99px; background: rgba(255,255,255,.14); transition: background .2s; }
+.track[aria-checked="true"] { background: linear-gradient(135deg, var(--a1), var(--a2)); }
+.knob { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.35); transition: left .2s cubic-bezier(.2,.9,.25,1.2); }
+.track[aria-checked="true"] .knob { left: 21px; }
 
+.hero { position: relative; overflow: hidden; border-radius: 20px; padding: 16px 18px; border: 1px solid rgba(124,92,255,.35);
+  background: linear-gradient(135deg, rgba(124,92,255,.22), rgba(34,211,238,.08)); animation: pop .35s cubic-bezier(.2,.9,.25,1.1) both; }
+.hero .n { font-size: 40px; font-weight: 800; letter-spacing: -1.5px; line-height: 1.05; }
+.hero .l { font-size: 13.5px; color: #cfd6ff; }
+.hero .today { position: absolute; right: 16px; top: 16px; font-size: 12px; font-weight: 650; padding: 4px 9px; border-radius: 99px; background: rgba(255,255,255,.08); color: #e6e9ff; }
+.hero .level { margin-top: 10px; font-size: 12.5px; color: var(--muted); }
+.hero .level b { color: var(--text); font-weight: 650; }
 
+.card { border-radius: 18px; padding: 14px; background: var(--panel); border: 1px solid var(--line); animation: rise .4s cubic-bezier(.2,.9,.25,1) both; }
+.label { font-size: 11.5px; font-weight: 700; letter-spacing: 1.1px; text-transform: uppercase; color: var(--dim); margin-bottom: 10px; }
+.site { display: grid; grid-template-columns: 52px 1fr; gap: 12px; align-items: center; }
+.ring { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; }
+.ring.safe { color: var(--safe); background: rgba(62,224,137,.12); box-shadow: 0 0 0 1px rgba(62,224,137,.35) inset, 0 0 24px rgba(62,224,137,.2); }
+.ring.caution { color: var(--warn); background: rgba(255,181,71,.12); box-shadow: 0 0 0 1px rgba(255,181,71,.35) inset, 0 0 24px rgba(255,181,71,.2); }
+.ring.danger { color: var(--danger); background: rgba(255,93,108,.12); box-shadow: 0 0 0 1px rgba(255,93,108,.4) inset, 0 0 24px rgba(255,93,108,.3); }
+.ring.unknown { color: var(--dim); background: rgba(255,255,255,.05); box-shadow: 0 0 0 1px var(--line2) inset; }
+.ring.loading svg { animation: spin 1s linear infinite; }
+.domain { font: 600 13px/1.3 ui-monospace, "SF Mono", Menlo, Consolas, monospace; color: var(--muted); word-break: break-all; }
+.verdict { font-size: 16.5px; font-weight: 700; margin-top: 2px; }
+.verdict.safe { color: var(--safe); } .verdict.caution { color: var(--warn); } .verdict.danger { color: var(--danger); } .verdict.unknown { color: var(--text); }
+.desc { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.reasons { list-style: none; display: grid; gap: 6px; margin-top: 12px; }
+.reasons li { padding: 9px 11px; border-radius: 12px; background: rgba(255,255,255,.03); border: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+.reasons b { display: block; color: var(--text); font-size: 13.5px; font-weight: 650; }
+.row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.row .btn-ghost { flex: 1; }
 
+.check { display: flex; gap: 8px; }
+.check input { flex: 1; min-width: 0; height: 44px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--line2); background: rgba(0,0,0,.25); font-size: 14px; }
+.check input::placeholder { color: var(--dim); }
+.check .btn-primary { min-height: 44px; padding: 0 16px; font-size: 14px; }
+.result { margin-top: 10px; padding: 10px 12px; border-radius: 12px; font-size: 13.5px; animation: rise .3s both; }
+.result.safe, .result.unknown { background: rgba(62,224,137,.10); border: 1px solid rgba(62,224,137,.3); }
+.result.caution { background: rgba(255,181,71,.10); border: 1px solid rgba(255,181,71,.3); }
+.result.danger { background: rgba(255,93,108,.10); border: 1px solid rgba(255,93,108,.35); }
+.result b { display: block; font-size: 14px; }
+.result span { color: var(--muted); }
+.err { margin-top: 8px; color: var(--danger); font-size: 13px; }
+
+.events { list-style: none; display: grid; gap: 6px; }
+.events li { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; font-size: 13px; }
+.events .d { font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.events .a { font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 99px; align-self: center; }
+.events .a.block { color: #ffd6da; background: rgba(255,93,108,.16); } .events .a.warn { color: #ffe6bf; background: rgba(255,181,71,.14); }
+.events .a.highlight { color: #ddd3ff; background: rgba(124,92,255,.18); }
+.events .t { grid-column: 1 / -1; color: var(--dim); font-size: 12px; }
+
+.foot { display: flex; align-items: center; justify-content: space-between; padding-top: 2px; font-size: 12.5px; color: var(--dim); }
+.foot button { color: #b9a8ff; font-weight: 650; }
+.off { filter: grayscale(.8) opacity(.6); }
+`;
 
 // ---------------------------------------------------------------------------
-// Color palette
+// Icons
 // ---------------------------------------------------------------------------
 
-const COLORS = {
-  safe: '#16a34a',
-  caution: '#d97706',
-  danger: '#dc2626',
-  unknown: '#6b7280',
-  primary: '#2563eb',
-  text: '#111827',
-  muted: '#6b7280',
-  bg: '#ffffff',
-  border: '#e5e7eb',
-  headerBg: '#1e3a5f',
+function Logo({ size = 24 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
+      <defs>
+        <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#7c5cff" />
+          <stop offset="1" stopColor="#22d3ee" />
+        </linearGradient>
+      </defs>
+      <path d="M12 2.5 4.5 5.5v6c0 4.6 3.1 8.6 7.5 10 4.4-1.4 7.5-5.4 7.5-10v-6z" fill="url(#lg)" />
+      <path d="m8.5 12 2.4 2.4 4.8-4.8" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function StatusIcon({ severity, loading }: { severity: Severity; loading: boolean }) {
+  const common = { width: 26, height: 26, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
+  if (loading) return <svg {...common}><path d="M12 3a9 9 0 1 1-9 9" /></svg>;
+  if (severity === 'safe') return <svg {...common}><path d="M12 2.5 4.5 5.5v6c0 4.6 3.1 8.6 7.5 10 4.4-1.4 7.5-5.4 7.5-10v-6z" /><path d="m8.5 12 2.4 2.4 4.8-4.8" /></svg>;
+  if (severity === 'danger') return <svg {...common}><path d="M8 2.5h8l5.5 5.5v8L16 21.5H8L2.5 16V8z" /><path d="M12 7.5v5.5M12 16.5h.01" /></svg>;
+  if (severity === 'caution') return <svg {...common}><path d="M12 3 2.5 19.5h19z" /><path d="M12 10v4.5M12 17.5h.01" /></svg>;
+  return <svg {...common}><circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16h.01" /></svg>;
+}
+
+const VERDICT: Record<Severity, string> = {
+  safe: 'Looks safe',
+  unknown: 'Not checked',
+  caution: 'Be careful here',
+  danger: 'Looks like a scam',
 };
 
-function severityColor(s: Severity | undefined): string {
-  if (!s) return COLORS.unknown;
-  return COLORS[s] ?? COLORS.unknown;
-}
+const LINK_VERDICT: Record<Severity, string> = {
+  safe: 'No problems found',
+  unknown: 'No problems found',
+  caution: 'Be careful with this link',
+  danger: 'Do not open this link',
+};
 
 // ---------------------------------------------------------------------------
-// Sub-components
-// ---------------------------------------------------------------------------
-
-function SeverityDot({ severity }: { severity: Severity | undefined }) {
-  const color = severityColor(severity);
-  return (
-    <span
-      aria-hidden="true"
-      style={{
-        display: 'inline-block',
-        width: 14,
-        height: 14,
-        borderRadius: '50%',
-        background: color,
-        flexShrink: 0,
-        marginRight: 8,
-        marginTop: 3,
-      }}
-    />
-  );
-}
-
-function Toggle({
-  checked,
-  onChange,
-  ariaLabel,
-}: {
-  checked: boolean;
-  onChange: (v: boolean) => void;
-  ariaLabel: string;
-}) {
-  return (
-    <button
-      role="switch"
-      aria-checked={checked}
-      aria-label={ariaLabel}
-      onClick={() => onChange(!checked)}
-      style={{
-        position: 'relative',
-        display: 'inline-flex',
-        alignItems: 'center',
-        width: 48,
-        height: 28,
-        background: checked ? COLORS.primary : COLORS.border,
-        borderRadius: 14,
-        border: 'none',
-        cursor: 'pointer',
-        padding: 0,
-        transition: 'background 0.2s',
-        flexShrink: 0,
-      }}
-    >
-      <span
-        style={{
-          position: 'absolute',
-          left: checked ? 22 : 2,
-          width: 24,
-          height: 24,
-          borderRadius: '50%',
-          background: '#fff',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
-          transition: 'left 0.2s',
-        }}
-      />
-    </button>
-  );
-}
-
-function ReasonsList({ reasons }: { reasons: Verdict['reasons'] }) {
-  if (!reasons.length) return null;
-  const top = reasons.slice(0, 3);
-  return (
-    <ul style={{ margin: '8px 0 0', padding: 0, listStyle: 'none' }}>
-      {top.map((r, i) => (
-        <li
-          key={i}
-          style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            padding: '6px 0',
-            borderTop: i > 0 ? `1px solid ${COLORS.border}` : 'none',
-            fontSize: 14,
-            color: COLORS.text,
-          }}
-        >
-          <span style={{ marginRight: 6, marginTop: 2, color: COLORS.danger }}>&#9888;</span>
-          <span>
-            <strong style={{ display: 'block', fontSize: 14 }}>{r.title}</strong>
-            <span style={{ color: COLORS.muted, fontSize: 13 }}>{r.detail}</span>
-          </span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function EventItem({ event }: { event: BlockEvent }) {
-  return (
-    <li
-      style={{
-        padding: '8px 0',
-        borderTop: `1px solid ${COLORS.border}`,
-        fontSize: 13,
-      }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontWeight: 600, color: COLORS.text }}>{event.domain}</span>
-        <span
-          style={{
-            fontSize: 11,
-            padding: '2px 6px',
-            borderRadius: 10,
-            background: event.action === 'block' ? '#fee2e2' : '#fef3c7',
-            color: event.action === 'block' ? COLORS.danger : COLORS.caution,
-            fontWeight: 600,
-          }}
-        >
-          {OPTIONS.eventAction[event.userOverride ?? event.action] ?? event.action}
-        </span>
-      </div>
-      {event.reasons[0] && (
-        <div style={{ color: COLORS.muted, fontSize: 12, marginTop: 2 }}>{event.reasons[0].title}</div>
-      )}
-      <div style={{ color: COLORS.muted, fontSize: 11, marginTop: 2 }}>{formatEventTime(event.ts)}</div>
-    </li>
-  );
-}
-
-function ActionButtons({
-  domain,
-  listed,
-  onTrust,
-  onBlock,
-  onReport,
-}: {
-  domain: string;
-  listed: TabStatus['listed'];
-  onTrust: () => void;
-  onBlock: () => void;
-  onReport: () => void;
-}) {
-  const btnBase: React.CSSProperties = {
-    flex: 1,
-    minHeight: 40,
-    border: `1px solid ${COLORS.border}`,
-    borderRadius: 8,
-    background: '#fff',
-    cursor: 'pointer',
-    fontSize: 13,
-    color: COLORS.text,
-    padding: '0 8px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-  };
-
-  return (
-    <div style={{ display: 'flex', gap: 6 }}>
-      <button
-        onClick={onTrust}
-        aria-label={POPUP.trustSiteAriaLabel}
-        title={domain ? `${BTN.trustSite}: ${domain}` : BTN.trustSite}
-        style={{
-          ...btnBase,
-          color: listed === 'allow' ? COLORS.safe : COLORS.text,
-          borderColor: listed === 'allow' ? COLORS.safe : COLORS.border,
-        }}
-      >
-        {listed === 'allow' ? '✓' : '🛡'} Trust
-      </button>
-      <button
-        onClick={onBlock}
-        aria-label={POPUP.blockSiteAriaLabel}
-        title={domain ? `${BTN.blockSite}: ${domain}` : BTN.blockSite}
-        style={{
-          ...btnBase,
-          color: listed === 'block' ? COLORS.danger : COLORS.text,
-          borderColor: listed === 'block' ? COLORS.danger : COLORS.border,
-        }}
-      >
-        🚫 Block
-      </button>
-      <button
-        onClick={onReport}
-        aria-label={POPUP.reportScamAriaLabel}
-        style={{ ...btnBase, color: COLORS.danger }}
-      >
-        ⚑ Report
-      </button>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Main App
+// App
 // ---------------------------------------------------------------------------
 
 export default function App() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
-  const [tabStatus, setTabStatus] = useState<TabStatus | null>(null);
   const [stats, setStats] = useState<Stats>(EMPTY_STATS);
+  const [tab, setTab] = useState<TabStatus | null>(null);
   const [loading, setLoading] = useState(true);
-  const [linkInput, setLinkInput] = useState('');
+  const [link, setLink] = useState('');
   const [linkResult, setLinkResult] = useState<Verdict | null>(null);
-  const [linkChecking, setLinkChecking] = useState(false);
-  const [linkError, setLinkError] = useState('');
+  const [linkBusy, setLinkBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [reported, setReported] = useState(false);
 
-  // Load initial data
   useEffect(() => {
-    async function load() {
+    void (async () => {
       try {
-        const [savedSettings, savedStats] = await Promise.all([
-          readStorage<Settings>(STORAGE_KEYS.settings, DEFAULT_SETTINGS),
+        const [s, st] = await Promise.all([
+          readStorage<Partial<Settings>>(STORAGE_KEYS.settings, {}),
           readStorage<Stats>(STORAGE_KEYS.stats, EMPTY_STATS),
         ]);
-        setSettings({ ...DEFAULT_SETTINGS, ...savedSettings, categories: { ...DEFAULT_SETTINGS.categories, ...savedSettings.categories } });
-        setStats(savedStats);
-
+        setSettings({ ...DEFAULT_SETTINGS, ...s, categories: { ...DEFAULT_SETTINGS.categories, ...s.categories } });
+        setStats(st);
         if (IS_EXTENSION) {
-          const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-          const tab = tabs[0];
-          if (tab?.id) {
-            const status = await sendMsg<TabStatus>({ type: 'getTabStatus', tabId: tab.id });
-            setTabStatus(status);
-          }
+          const [active] = await browser.tabs.query({ active: true, currentWindow: true });
+          if (active?.id !== undefined) setTab(await sendMsg<TabStatus>({ type: 'getTabStatus', tabId: active.id }));
         } else {
           const { mockTabStatusDanger } = await import('@/src/ui/dev/mock-background');
-          setTabStatus(mockTabStatusDanger);
+          setTab(mockTabStatusDanger);
         }
       } catch (e) {
-        console.error('Popup load error:', e);
+        console.error('[sentinel] popup load', e);
       } finally {
         setLoading(false);
       }
-    }
-    load();
+    })();
   }, []);
 
-  // Watch storage changes
   useEffect(() => {
     if (!IS_EXTENSION) return;
-    const handler = (changes: Record<string, Browser.storage.StorageChange>) => {
-      if (changes[STORAGE_KEYS.settings]?.newValue) {
-        setSettings({ ...DEFAULT_SETTINGS, ...(changes[STORAGE_KEYS.settings]!.newValue as Partial<Settings>) });
-      }
-      if (changes[STORAGE_KEYS.stats]?.newValue) {
-        setStats(changes[STORAGE_KEYS.stats]!.newValue as Stats);
-      }
+    const onChange = (changes: Record<string, Browser.storage.StorageChange>) => {
+      const s = changes[STORAGE_KEYS.settings]?.newValue as Partial<Settings> | undefined;
+      if (s) setSettings({ ...DEFAULT_SETTINGS, ...s });
+      const st = changes[STORAGE_KEYS.stats]?.newValue as Stats | undefined;
+      if (st) setStats(st);
     };
-    browser.storage.onChanged.addListener(handler);
-    return () => browser.storage.onChanged.removeListener(handler);
+    browser.storage.onChanged.addListener(onChange);
+    return () => browser.storage.onChanged.removeListener(onChange);
   }, []);
 
-  const toggleEnabled = useCallback(async (val: boolean) => {
-    const next = { ...settings, enabled: val };
+  const toggle = useCallback(async () => {
+    const next = { ...settings, enabled: !settings.enabled };
     setSettings(next);
     await writeStorage(STORAGE_KEYS.settings, next);
   }, [settings]);
 
-  const handleTrustSite = useCallback(async () => {
-    if (!tabStatus?.domain) return;
-    const isCurrentlyTrusted = tabStatus.listed === 'allow';
-    await sendMsg({ type: 'setList', pattern: tabStatus.domain, kind: isCurrentlyTrusted ? null : 'allow' });
-    setTabStatus((prev) => prev ? { ...prev, listed: isCurrentlyTrusted ? null : 'allow' } : prev);
-  }, [tabStatus]);
+  const setList = useCallback(
+    async (kind: 'allow' | 'block') => {
+      if (!tab?.domain) return;
+      const next = tab.listed === kind ? null : kind;
+      try {
+        await sendMsg({ type: 'setList', pattern: tab.domain, kind: next });
+        setTab({ ...tab, listed: next });
+      } catch (e) {
+        setError(e instanceof Error ? e.message : ERRORS.generic);
+      }
+    },
+    [tab],
+  );
 
-  const handleBlockSite = useCallback(async () => {
-    if (!tabStatus?.domain) return;
-    const isCurrentlyBlocked = tabStatus.listed === 'block';
-    await sendMsg({ type: 'setList', pattern: tabStatus.domain, kind: isCurrentlyBlocked ? null : 'block' });
-    setTabStatus((prev) => prev ? { ...prev, listed: isCurrentlyBlocked ? null : 'block' } : prev);
-  }, [tabStatus]);
+  const report = useCallback(async () => {
+    if (!tab?.url) return;
+    try {
+      await sendMsg({ type: 'reportScam', url: tab.url });
+      setReported(true);
+      setTab({ ...tab, listed: 'block' });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : ERRORS.generic);
+    }
+  }, [tab]);
 
-  const handleReportScam = useCallback(async () => {
-    if (!tabStatus?.url) return;
-    await sendMsg({ type: 'reportScam', url: tabStatus.url });
-  }, [tabStatus]);
-
-  const handleCheckLink = useCallback(async () => {
-    setLinkError('');
+  const check = useCallback(async () => {
+    setError('');
     setLinkResult(null);
-    if (!linkInput.trim()) return;
-    let url = linkInput.trim();
-    if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+    const raw = link.trim();
+    if (!raw) return;
+    setLinkBusy(true);
     try {
-      new URL(url);
-    } catch {
-      setLinkError(ERRORS.invalidUrl);
-      return;
-    }
-    setLinkChecking(true);
-    try {
-      const verdict = await sendMsg<Verdict>({ type: 'checkUrl', url });
-      setLinkResult(verdict);
-    } catch {
-      setLinkError(POPUP.linkCheckError);
+      setLinkResult(await sendMsg<Verdict>({ type: 'checkUrl', url: raw }));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : ERRORS.invalidUrl);
     } finally {
-      setLinkChecking(false);
+      setLinkBusy(false);
     }
-  }, [linkInput]);
+  }, [link]);
 
-  const openSettings = useCallback(() => {
-    if (IS_EXTENSION) browser.runtime.openOptionsPage();
-  }, []);
+  const openSettings = () => (IS_EXTENSION ? void browser.runtime.openOptionsPage() : undefined);
 
-  // Dark mode
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const bg = prefersDark ? '#1f2937' : '#ffffff';
-  const textColor = prefersDark ? '#f9fafb' : COLORS.text;
-  const borderColor = prefersDark ? '#374151' : COLORS.border;
-  const cardBg = prefersDark ? '#111827' : '#f9fafb';
-
-  const verdict = tabStatus?.verdict;
-  const severity = verdict?.severity;
+  const v = tab?.verdict ?? null;
+  const isWeb = Boolean(tab?.url && /^https?:/.test(tab.url));
+  const severity: Severity = v?.severity ?? 'unknown';
+  const stopped = totalBlocked(stats);
+  const today = stats.today?.date === new Date().toISOString().slice(0, 10) ? stats.today.blocked : 0;
+  const stop = STOPS.reduce((best, s) => (Math.abs(s.at - settings.aggressiveness) < Math.abs(best.at - settings.aggressiveness) ? s : best), STOPS[0]!);
+  const recent: BlockEvent[] = (tab?.recent ?? []).slice(-3).reverse();
 
   return (
-    <div
-      style={{
-        width: 380,
-        minHeight: 600,
-        background: bg,
-        color: textColor,
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-        display: 'flex',
-        flexDirection: 'column',
-        fontSize: 16,
-      }}
-    >
-      {/* Header */}
-      <header
-        style={{
-          background: COLORS.headerBg,
-          color: '#fff',
-          padding: '14px 16px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        <span style={{ fontWeight: 700, fontSize: 20, letterSpacing: '-0.3px' }}>{BRAND}</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 13, color: settings.enabled ? '#86efac' : '#9ca3af' }}>
-            {settings.enabled ? POPUP.onLabel : POPUP.offLabel}
-          </span>
-          <Toggle
-            checked={settings.enabled}
-            onChange={toggleEnabled}
-            ariaLabel={POPUP.toggleAriaLabel}
-          />
-        </div>
-      </header>
-
-      {/* Stats bar */}
-      <div
-        style={{
-          background: COLORS.primary,
-          color: '#fff',
-          padding: '8px 16px',
-          fontSize: 13,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-        }}
-      >
-        <strong>{totalBlocked(stats)}</strong>
-        <span>{POPUP.threatsStopped}</span>
-      </div>
-
-      {/* Main content */}
-      <div style={{ flex: 1, padding: '16px', display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto' }}>
-
-        {/* Current page status */}
-        <section aria-label={POPUP.currentPage}>
-          <h2
-            style={{
-              margin: '0 0 10px',
-              fontSize: 13,
-              fontWeight: 600,
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-              color: COLORS.muted,
-            }}
-          >
-            {POPUP.currentPage}
-          </h2>
-
-          {loading ? (
-            <div style={{ padding: '20px 0', textAlign: 'center', color: COLORS.muted }}>
-              {POPUP.checking}
-            </div>
-          ) : !tabStatus ? (
-            <div style={{ color: COLORS.muted, fontSize: 15 }}>{POPUP.noPage}</div>
-          ) : !verdict ? (
-            <div style={{ padding: '20px 0', textAlign: 'center', color: COLORS.muted }}>
-              {POPUP.checking}
-            </div>
-          ) : (
-            <div
-              style={{
-                background: cardBg,
-                borderRadius: 12,
-                padding: 14,
-                border: `2px solid ${severityColor(severity)}`,
-              }}
-            >
-              {/* Domain + severity */}
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                <SeverityDot severity={severity} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div
-                    style={{
-                      fontWeight: 700,
-                      fontSize: 18,
-                      color: severityColor(severity),
-                      wordBreak: 'break-all',
-                    }}
-                  >
-                    {verdict.domain}
-                  </div>
-                  <div style={{ fontSize: 15, marginTop: 2, color: textColor }}>
-                    {SEVERITY_LABELS[severity!]}
-                  </div>
-                  <div style={{ fontSize: 13, color: COLORS.muted, marginTop: 2 }}>
-                    {SEVERITY_DESCRIPTIONS[severity!]}
-                  </div>
-                </div>
-              </div>
-
-              {/* Listed status */}
-              {tabStatus.listed && (
-                <div
-                  style={{
-                    marginTop: 8,
-                    fontSize: 13,
-                    color: tabStatus.listed === 'allow' ? COLORS.safe : COLORS.danger,
-                    fontWeight: 600,
-                  }}
-                >
-                  {tabStatus.listed === 'allow' ? POPUP.listedAllow : POPUP.listedBlock}
-                </div>
-              )}
-
-              {/* Safe alternative */}
-              {verdict.safeAlternative && (
-                <div
-                  style={{
-                    marginTop: 10,
-                    padding: '8px 12px',
-                    background: '#dcfce7',
-                    borderRadius: 8,
-                    fontSize: 14,
-                    color: '#166534',
-                  }}
-                >
-                  {POPUP.safeAlternative(verdict.safeAlternative.label)}{' '}
-                  <a
-                    href={verdict.safeAlternative.url}
-                    style={{ color: COLORS.primary, fontWeight: 600 }}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {verdict.safeAlternative.url}
-                  </a>
-                </div>
-              )}
-
-              {/* Depth indicator */}
-              {verdict.depth === 'basic' && (
-                <div style={{ marginTop: 6, fontSize: 12, color: COLORS.muted, fontStyle: 'italic' }}>
-                  {POPUP.depthBasic}
-                </div>
-              )}
-
-              {/* Reasons */}
-              {verdict.reasons.length > 0 && <ReasonsList reasons={verdict.reasons} />}
-
-              {/* Action buttons */}
-              <div style={{ marginTop: 12 }}>
-                <ActionButtons
-                  domain={verdict.domain}
-                  listed={tabStatus.listed}
-                  onTrust={handleTrustSite}
-                  onBlock={handleBlockSite}
-                  onReport={handleReportScam}
-                />
-              </div>
-            </div>
-          )}
-        </section>
-
-        {/* Link checker */}
-        <section aria-label={POPUP.checkLinkLabel}>
-          <h2
-            style={{
-              margin: '0 0 8px',
-              fontSize: 13,
-              fontWeight: 600,
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-              color: COLORS.muted,
-            }}
-          >
-            {POPUP.checkLinkLabel}
-          </h2>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <input
-              type="url"
-              value={linkInput}
-              onChange={(e) => setLinkInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleCheckLink()}
-              placeholder={POPUP.checkLinkPlaceholder}
-              aria-label={POPUP.checkLinkLabel}
-              style={{
-                flex: 1,
-                height: 44,
-                padding: '0 12px',
-                fontSize: 15,
-                border: `1px solid ${borderColor}`,
-                borderRadius: 8,
-                background: bg,
-                color: textColor,
-                outline: 'none',
-              }}
-            />
-            <button
-              onClick={handleCheckLink}
-              disabled={linkChecking || !linkInput.trim()}
-              style={{
-                height: 44,
-                padding: '0 18px',
-                background: COLORS.primary,
-                color: '#fff',
-                border: 'none',
-                borderRadius: 8,
-                fontSize: 15,
-                fontWeight: 600,
-                cursor: linkChecking || !linkInput.trim() ? 'not-allowed' : 'pointer',
-                opacity: linkChecking || !linkInput.trim() ? 0.6 : 1,
-              }}
-            >
-              {linkChecking ? '…' : BTN.checkLink}
-            </button>
+    <>
+      <style>{CSS}</style>
+      <div className="glow" />
+      <main className={`app ${settings.enabled ? '' : 'off'}`}>
+        <div className="head">
+          <div className="logo">
+            <Logo />
+            {BRAND}
           </div>
+          <label className="switch">
+            {settings.enabled ? 'Protecting' : 'Paused'}
+            <button className="track" role="switch" aria-checked={settings.enabled} aria-label={POPUP.toggleAriaLabel} onClick={toggle}>
+              <span className="knob" />
+            </button>
+          </label>
+        </div>
 
-          {linkError && (
-            <div style={{ marginTop: 8, fontSize: 13, color: COLORS.danger }}>{linkError}</div>
-          )}
+        <section className="hero" aria-label="Protection summary">
+          {today > 0 && <span className="today">+{today} today</span>}
+          <div className="n grad-text">{stopped.toLocaleString()}</div>
+          <div className="l">{stopped === 1 ? 'scam stopped' : 'scams stopped'} so far</div>
+          <div className="level">
+            Protection level: <b>{stop.label}</b> · runs on your device
+          </div>
+        </section>
 
-          {linkResult && (
-            <div
-              style={{
-                marginTop: 10,
-                padding: 12,
-                borderRadius: 10,
-                border: `2px solid ${severityColor(linkResult.severity)}`,
-                background: cardBg,
-              }}
-            >
-              <div style={{ fontWeight: 700, color: severityColor(linkResult.severity), fontSize: 15 }}>
-                {SEVERITY_LABELS[linkResult.severity]}
+        <section className="card" aria-label={POPUP.currentPage}>
+          <div className="label">{POPUP.currentPage}</div>
+          {!isWeb && !loading ? (
+            <p className="desc">{POPUP.noPage}</p>
+          ) : (
+            <>
+              <div className="site">
+                <div className={`ring ${loading ? 'unknown loading' : severity}`}>
+                  <StatusIcon severity={severity} loading={loading} />
+                </div>
+                <div>
+                  <div className="domain">{tab?.domain || '—'}</div>
+                  <div className={`verdict ${severity}`}>{loading ? POPUP.checking : tab?.listed === 'allow' ? 'You trust this site' : VERDICT[severity]}</div>
+                  {!loading && <div className="desc">{SEVERITY_DESCRIPTIONS[severity]}</div>}
+                </div>
               </div>
-              <div style={{ fontSize: 13, color: COLORS.muted, marginTop: 2 }}>{linkResult.domain}</div>
-              {linkResult.reasons[0] && (
-                <div style={{ marginTop: 6, fontSize: 13, color: textColor }}>
-                  {linkResult.reasons[0].title}
+              {v && v.reasons.length > 0 && (
+                <ul className="reasons">
+                  {v.reasons.slice(0, 3).map((r) => (
+                    <li key={r.title}>
+                      <b>{r.title}</b>
+                      {r.detail}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {isWeb && (
+                <div className="row">
+                  <button className="btn-ghost" aria-pressed={tab?.listed === 'allow'} onClick={() => setList('allow')}>
+                    {tab?.listed === 'allow' ? '✓ Trusted' : 'Trust site'}
+                  </button>
+                  <button className="btn-ghost" aria-pressed={tab?.listed === 'block'} onClick={() => setList('block')}>
+                    {tab?.listed === 'block' ? '✓ Blocked' : 'Block site'}
+                  </button>
+                  <button className="btn-ghost" onClick={report} disabled={reported}>
+                    {reported ? 'Reported' : 'Report scam'}
+                  </button>
                 </div>
               )}
-            </div>
+              {reported && (
+                <p className="desc" style={{ marginTop: 8 }}>
+                  Thanks — blocked on this computer. You can also tell the FTC at reportfraud.ftc.gov.
+                </p>
+              )}
+            </>
           )}
         </section>
 
-        {/* Recent events */}
-        {tabStatus?.recent && tabStatus.recent.length > 0 && (
-          <section aria-label={POPUP.recentEvents}>
-            <h2
-              style={{
-                margin: '0 0 4px',
-                fontSize: 13,
-                fontWeight: 600,
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                color: COLORS.muted,
-              }}
-            >
-              {POPUP.recentEvents}
-            </h2>
-            <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
-              {tabStatus.recent.slice(0, 5).map((ev) => (
-                <EventItem key={ev.id} event={ev} />
+        <section className="card" aria-label={POPUP.checkLinkLabel}>
+          <div className="label">{POPUP.checkLinkLabel}</div>
+          <form
+            className="check"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void check();
+            }}
+          >
+            <input value={link} onChange={(e) => setLink(e.target.value)} placeholder={POPUP.checkLinkPlaceholder} aria-label={POPUP.checkLinkPlaceholder} spellCheck={false} />
+            <button className="btn-primary" disabled={linkBusy || !link.trim()}>
+              {linkBusy ? '…' : 'Check'}
+            </button>
+          </form>
+          {linkResult && (
+            <div className={`result ${linkResult.severity}`}>
+              <b>{LINK_VERDICT[linkResult.severity]}</b>
+              <span>{linkResult.reasons[0] ? `${linkResult.reasons[0].title}. ${linkResult.reasons[0].detail}` : `${linkResult.domain} isn't on any scam list and looks normal.`}</span>
+            </div>
+          )}
+          {error && <p className="err">{error}</p>}
+        </section>
+
+        {recent.length > 0 && (
+          <section className="card" aria-label={POPUP.recentEvents}>
+            <div className="label">{POPUP.recentEvents}</div>
+            <ul className="events">
+              {recent.map((e) => (
+                <li key={e.id}>
+                  <span className="d">{e.reasons[0]?.title ?? e.domain}</span>
+                  <span className={`a ${e.action}`}>{OPTIONS.eventAction[e.userOverride ?? e.action] ?? e.action}</span>
+                  <span className="t">{formatEventTime(e.ts)}</span>
+                </li>
               ))}
             </ul>
           </section>
         )}
-      </div>
 
-      {/* Footer */}
-      <footer
-        style={{
-          borderTop: `1px solid ${borderColor}`,
-          padding: '10px 16px',
-          display: 'flex',
-          justifyContent: 'flex-end',
-        }}
-      >
-        <button
-          onClick={openSettings}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: COLORS.primary,
-            cursor: 'pointer',
-            fontSize: 14,
-            fontWeight: 600,
-            padding: '6px 0',
-          }}
-        >
-          {POPUP.settingsLink} →
-        </button>
-      </footer>
-    </div>
+        <div className="foot">
+          <span>🔒 Nothing leaves your computer</span>
+          <button onClick={openSettings}>Settings →</button>
+        </div>
+      </main>
+    </>
   );
 }

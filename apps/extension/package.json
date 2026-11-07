@@ -16,7 +16,8 @@
     "e2e": "node tests/e2e/smoke.mjs",
     "lint:firefox": "wxt build -b firefox --mv3 && npx -y web-ext lint -s .output/firefox-mv3 --self-hosted",
     "demo": "node tests/demo/demo.mjs",
-    "eval": "node --import tsx eval/url-only.ts"
+    "eval": "node --import tsx eval/url-only.ts",
+    "demo:serve": "node tests/demo/serve.mjs"
   },
   "devDependencies": {
     "@types/react": "^19.3.0",
