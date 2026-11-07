@@ -4,7 +4,7 @@
 
 **Browse with total confidence.**
 
-A free, open-source, local-first browser extension that detects and blocks scam sites in real time, explains *why* a site is dangerous, and keeps your data on your device.
+A local-first browser extension that detects and blocks scam sites in real time, explains *why* a site is dangerous, and keeps your data on your device.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Manifest V3](https://img.shields.io/badge/Manifest-V3-green)
@@ -336,11 +336,6 @@ When adding a detection signal, please keep these in mind:
 
 ---
 
-## Security
-
-If you find a vulnerability, please report it privately rather than opening a public issue. Use GitHub's private vulnerability reporting on this repository, or contact the maintainer directly through their GitHub profile.
-
----
 
 ## License
 
@@ -348,9 +343,4 @@ Released under the [MIT License](LICENSE).
 
 ---
 
-## Acknowledgments
-
-- Built as part of the **Indy Init '26** hackathon.
-- Threat intelligence from public feeds such as [PhishTank](https://phishtank.org/) and [OpenPhish](https://openphish.com/).
-- Reputation lookups powered by Google Safe Browsing and RDAP.
-- Extension tooling by [WXT](https://wxt.dev/).
+## Built as part of the **Indy Init '26** hackathon.
