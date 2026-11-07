@@ -140,7 +140,7 @@ const VERDICT: Record<Severity, string> = {
 
 const LINK_VERDICT: Record<Severity, string> = {
   safe: 'No problems found',
-  unknown: 'No problems found',
+  unknown: 'Could not fully check this link',
   caution: 'Be careful with this link',
   danger: 'Do not open this link',
 };
@@ -339,12 +339,18 @@ export default function App() {
                 Check
               </button>
             </form>
-            {linkResult && (
-              <div className={`result ${linkResult.severity}`}>
-                <b>{LINK_VERDICT[linkResult.severity]}</b>
-                <span>{linkResult.reasons[0] ? `${linkResult.reasons[0].title}. ${linkResult.reasons[0].detail}` : `${linkResult.domain} isn’t on any scam list and looks normal.`}</span>
-              </div>
-            )}
+            {linkResult && (() => {
+              const hasReasons = linkResult.reasons.length > 0;
+              const rawSev = linkResult.severity;
+              const displaySev: Severity = (rawSev === 'safe' || rawSev === 'unknown') && hasReasons ? 'caution' : rawSev;
+              const headline = displaySev === 'caution' && hasReasons ? 'Be careful with this link' : LINK_VERDICT[rawSev];
+              return (
+                <div className={`result ${displaySev}`}>
+                  <b>{headline}</b>
+                  <span>{linkResult.reasons[0] ? `${linkResult.reasons[0].title}. ${linkResult.reasons[0].detail}` : `${linkResult.domain} isn't on any scam list and looks normal.`}</span>
+                </div>
+              );
+            })()}
             {error && <p className="err">{error}</p>}
           </section>
         </div>

@@ -55,6 +55,14 @@ doesn't). Get one with `npx playwright-core install chromium` and point `CHROME=
 Set `KNOWN_BAD_HOST=` to a host from the feed to include the known-bad redirect check. Set `SHOTS=<dir>`
 to save a screenshot of what the user sees at each step.
 
+## Live demo scam site
+
+Test Sentinel against a real credential-harvesting page (Instagram login clone):
+
+**http://instagram-clone-konstantindev1.vercel.app/**
+
+With Sentinel loaded, visit this URL and you should see it flag the page for brand impersonation — it uses Instagram's name and login form but is not on Instagram's real domain (`instagram.com`).
+
 ## How the engine works
 
 ```
