@@ -46,6 +46,7 @@ await new Promise((r) => server.listen(PORT, '127.0.0.1', r));
 
 const profile = mkdtempSync(join(tmpdir(), 'ss-e2e-'));
 const ctx = await chromium.launchPersistentContext(profile, {
+  viewport: { width: 1100, height: 720 },
   executablePath: process.env.CHROME ?? '/usr/bin/google-chrome-stable',
   headless: false,
   acceptDownloads: true,
@@ -60,6 +61,10 @@ const ctx = await chromium.launchPersistentContext(profile, {
 });
 
 let failures = 0;
+// SHOTS=dir saves a screenshot of what the user sees at each step.
+const SHOTS = process.env.SHOTS;
+const shot = async (page, name) => SHOTS && page.screenshot({ path: join(SHOTS, `${name}.png`) });
+
 const check = (name, ok, detail = '') => {
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${detail ? `  (${detail})` : ''}`);
   if (!ok) failures++;
@@ -87,6 +92,7 @@ try {
   {
     const page = await visit('chase-secure-verify.com');
     const { verdict, events, badge } = await tabState(page);
+    await shot(page, '1-chase-lookalike');
     check('chase lookalike: danger', verdict?.severity === 'danger', `score ${verdict?.score}`);
     check('chase lookalike: safe alternative is chase.com', verdict?.safeAlternative?.url === 'https://chase.com/');
     check('chase lookalike: page block logged', events.some((e) => e.category === 'page' && e.action === 'block'));
@@ -99,6 +105,7 @@ try {
   {
     const page = await visit('usps-redelivery.top');
     const { verdict } = await tabState(page);
+    await shot(page, '2-usps-fee');
     check('usps fee: danger', verdict?.severity === 'danger', `score ${verdict?.score}`);
     console.log('      reasons:', verdict?.reasons.map((r) => r.title).join(' | '));
     await page.close();
@@ -111,6 +118,7 @@ try {
     await page.waitForTimeout(2500);
     const { verdict, tabId } = await tabState(page);
     const muted = await sw.evaluate(async (id) => (await chrome.tabs.get(id)).mutedInfo?.muted, tabId);
+    await shot(page, '3-scareware');
     check('scareware: danger', verdict?.severity === 'danger', `score ${verdict?.score}`);
     check('scareware: tab muted', muted === true);
     const inFullscreen = await page.evaluate(() => Boolean(document.fullscreenElement));
@@ -130,6 +138,7 @@ try {
     const downloads = await sw.evaluate(async () => chrome.downloads.search({}));
     const any = downloads.find((d) => /anydesk/i.test(`${d.filename} ${d.url} ${d.finalUrl}`));
     if (!any) console.log('      downloads seen:', JSON.stringify(downloads.map((d) => ({ url: d.url, state: d.state, paused: d.paused }))));
+    await shot(dl, '4-anydesk-download');
     check('anydesk download paused', any?.paused === true, any ? `state ${any.state}, paused ${any.paused}` : 'no download seen');
     await page.close();
     await dl.close();
@@ -139,6 +148,7 @@ try {
   {
     const page = await visit('quantum-ai-profits.live');
     const { verdict } = await tabState(page);
+    await shot(page, '5-crypto');
     check('crypto platform: caution or worse', ['caution', 'danger'].includes(verdict?.severity), `score ${verdict?.score}`);
     console.log('      reasons:', verdict?.reasons.map((r) => r.title).join(' | '));
     await page.close();
@@ -148,6 +158,7 @@ try {
   {
     const page = await visit('grannys-quilts.shop');
     const { verdict, events } = await tabState(page);
+    await shot(page, '6-small-shop-balanced');
     check('small shop: not blocked', verdict && verdict.severity !== 'danger' && !events.some((e) => e.action === 'block'), `score ${verdict?.score}, ${verdict?.severity}`);
     await page.close();
   }
@@ -163,6 +174,7 @@ try {
     await page.waitForTimeout(800);
     const { events } = await tabState(page);
     const focused = await page.evaluate(() => document.activeElement?.id);
+    await shot(page, '7-small-shop-strict-card');
     check('strict: card entry paused', events.some((e) => e.category === 'transaction' && e.action === 'block'), `events ${events.map((e) => e.category).join(',')}`);
     check('strict: card field not focused while paused', focused !== 'cc', `active ${focused}`);
     await sw.evaluate(async () => {

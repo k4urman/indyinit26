@@ -13,7 +13,8 @@
     "test": "vitest run",
     "postinstall": "wxt prepare",
     "lists": "node scripts/build-lists.ts",
-    "e2e": "node tests/e2e/smoke.mjs"
+    "e2e": "node tests/e2e/smoke.mjs",
+    "lint:firefox": "wxt build -b firefox --mv3 && npx -y web-ext lint -s .output/firefox-mv3 --self-hosted"
   },
   "devDependencies": {
     "@types/react": "^19.3.0",

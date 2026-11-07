@@ -20,7 +20,14 @@ export default defineConfig({
     // Toolbar button for the badge; the popup entrypoint adds default_popup.
     action: { default_title: 'ScamShield' },
     ...(browser === 'firefox'
-      ? { browser_specific_settings: { gecko: { id: 'scamshield@indyinit26', strict_min_version: '128.0' } } }
+      ? { browser_specific_settings: {
+          gecko: {
+            id: 'scamshield@indyinit26',
+            strict_min_version: '140.0',
+            // Nothing leaves the device (plan.md §6).
+            data_collection_permissions: { required: ['none'] },
+          },
+        } }
       : {}),
   }),
 });

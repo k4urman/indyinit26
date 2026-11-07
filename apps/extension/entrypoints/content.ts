@@ -212,8 +212,10 @@ export default defineContentScript({
         if (el?.isConnected) highlightHandles.push(ui.highlight(el, h.reason));
       }
 
-      if (d.scarewareRescue && !rescued) {
+      if (rescued) return; // The rescue screen is up; nothing may stack on top of it.
+      if (d.scarewareRescue) {
         rescued = true;
+        pageHandled = true;
         const lockdown: MainWorldReply = { kind: 'lockdown' };
         mainPort?.postMessage(lockdown);
         if (document.fullscreenElement) await document.exitFullscreen().catch(() => {});

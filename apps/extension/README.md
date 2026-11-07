@@ -15,11 +15,13 @@ npm test               # unit tests (engine, detectors, policy)
 npm run compile        # type-check
 npm run lists          # rebuild bundled reputation data (needs network)
 npm run e2e            # end-to-end smoke test against tests/fixtures (build first)
+npm run lint:firefox   # Mozilla's add-on validator on the Firefox build
 ```
 
 `npm run e2e` needs a Chromium that still accepts `--load-extension` (branded Chrome 137+
 doesn't). Get one with `npx playwright-core install chromium` and point `CHROME=` at it.
-Set `KNOWN_BAD_HOST=` to a host from the feed to include the known-bad redirect check.
+Set `KNOWN_BAD_HOST=` to a host from the feed to include the known-bad redirect check. Set `SHOTS=<dir>`
+to save a screenshot of what the user sees at each step.
 
 ## How the engine works
 

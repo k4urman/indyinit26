@@ -67,7 +67,7 @@ export function createInPageUI(): InPageUI {
   const reasonList = (reasons: Reason[]) =>
     el('ul', {}, ...reasons.map((r) => el('li', {}, el('b', { textContent: r.title }), el('br'), r.detail)));
 
-  function modal(title: string, v: Verdict, allowTrust: boolean): Promise<GateChoice> {
+  function modal(title: string, v: Verdict, allowTrust: boolean, allowContinue = true): Promise<GateChoice> {
     mount();
     return new Promise((resolve) => {
       const back = el('button', { className: 'primary', textContent: v.safeAlternative?.label ?? 'Go back to safety' });
@@ -78,7 +78,7 @@ export function createInPageUI(): InPageUI {
           el('div', { className: 'brand', textContent: BRAND }),
           el('h1', { textContent: title }),
           reasonList(v.reasons),
-          el('div', { className: 'row' }, back, cont, ...(allowTrust ? [trust] : []))));
+          el('div', { className: 'row' }, back, ...(allowContinue ? [cont] : []), ...(allowTrust ? [trust] : []))));
       root.append(box);
       back.focus();
       let n = 3;
@@ -127,7 +127,7 @@ export function createInPageUI(): InPageUI {
     },
     async scarewareRescue(v) {
       // Only one way out of this screen: to safety.
-      for (;;) if ((await modal('This is a fake warning. Your computer is fine.', v, false)) === 'back') return;
+      await modal('This is a fake warning. Your computer is fine.', v, false, false);
     },
     async blockOverlay(v) {
       const c = await modal('This website may be a scam', v, false);
