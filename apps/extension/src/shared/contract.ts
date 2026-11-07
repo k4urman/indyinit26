@@ -220,8 +220,8 @@ export interface InPageUI {
   gate(v: Verdict, action: GateAction): Promise<GateChoice>;
   /** Outline one element with a short reason tooltip. */
   highlight(el: Element, reason: Reason): { remove(): void };
-  /** Shown after the engine has exited fullscreen and muted the tab. */
-  scarewareRescue(v: Verdict): void;
+  /** Shown after the engine has exited fullscreen and muted the tab. Resolves when the user taps "go to safety"; the engine navigates. */
+  scarewareRescue(v: Verdict): Promise<void>;
   /** Overlay for behavior-based blocks, where the page is already loaded. */
   blockOverlay(v: Verdict): Promise<'back' | 'continue'>;
 }

