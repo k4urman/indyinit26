@@ -1,0 +1,10 @@
+{
+  "extends": "./.wxt/tsconfig.json",
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "jsx": "react-jsx"
+  },
+  // scripts/, eval/ and tests/ run under Node (see package.json "lists"), not in the extension.
+  "exclude": ["scripts", "eval", "tests", "node_modules", ".output"]
+}

@@ -8,7 +8,7 @@ Don't change it on your own — propose changes to the backend owner.
 
 ## Product in one paragraph
 
-ScamShield is a free, open-source browser extension (Chrome, Edge, Firefox) that
+Sentinel is a free, open-source browser extension (Chrome, Edge, Firefox) that
 stops scams at the moment of harm: before someone types a password into a fake
 bank page, pays a "$1.99 USPS fee", calls the number on a fake virus alert, or
 installs remote-control software. Users are children, older adults and young
@@ -26,12 +26,12 @@ The name is a working name — use `BRAND` from the contract, never a hard-coded
 | Path (under `apps/extension/`) | Owner |
 | --- | --- |
 | `entrypoints/popup/` | you |
-| `entrypoints/dashboard/` (settings + blocked log) | you |
+| `entrypoints/options/` (settings + blocked log; opens in a tab) | you |
 | `entrypoints/blocked/` (full-page block, `blocked.html?id=…`) | you |
 | `src/ui/` (shared components) and `src/ui/inpage/` (implements `InPageUI`) | you |
 | `src/ui/strings.ts` (all user-facing copy, ready for `browser.i18n`) | you |
 | `src/shared/contract.ts` | shared |
-| `entrypoints/background.ts`, `content.ts`, `main-world.ts`, `offscreen/`, `src/engine/`, `src/detectors/`, `src/storage/` | backend |
+| `entrypoints/background.ts`, `content.ts`, `main-world.content.ts`, `src/engine/`, `src/detectors/`, `src/storage/` | backend |
 
 ## Screens
 
@@ -89,7 +89,9 @@ Under ~800px wide, stack the columns.
 ### 4. In-page UI (`src/ui/inpage/`, implements `InPageUI`)
 
 Export a single factory, `createInPageUI(): InPageUI`. The backend calls it from the
-content script; you don't wire up detection.
+content script; you don't wire up detection. A placeholder implementation already exists at
+`src/ui/inpage/index.ts` so the engine can be tested; replace the whole file. Never navigate
+or message the background from in-page UI: return the user's choice and the engine acts on it.
 
 - `showBanner`: slim strip at the top of the page, dismissible.
 - `gate`: centered modal over a dimmed page. "Go back" (primary, focused) → `back`;
@@ -99,7 +101,9 @@ content script; you don't wire up detection.
 - `highlight`: outline + small badge on the element; hover/tap shows `reason.title`.
 - `scarewareRescue`: full-viewport calm screen: "This is a fake warning. Your computer
   is fine. Microsoft and Apple never show phone numbers in alerts. Do not call."
-  One button: go to safety.
+  One button: go to safety, which resolves the returned promise (the engine does the navigation).
+- `gate` and `blockOverlay` take `{ allowContinue: false }` for the Child preset / Paranoid on
+  risky, unfamiliar sites: show only the safe button (no "Continue", no "trust").
 - `blockOverlay`: same content and buttons as the blocked page, as a full-viewport
   overlay (used when the page is judged after it has loaded). Share the component.
 

@@ -1,0 +1,47 @@
+<!doctype html>
+<!-- DEMO FIXTURE — not a real site. Served locally as win-defender-alert.xyz to show Sentinel
+     breaking a tech-support scareware page. Click anywhere to trigger the fake "lock". -->
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>** Windows Defender Security Warning **</title>
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  body { font-family: "Segoe UI", Tahoma, sans-serif; background: #0a3d91; color: #fff; min-height: 100vh; }
+  .topbar { background: #c62828; padding: 10px; text-align: center; font-weight: 700; font-size: 15px; letter-spacing: .3px; }
+  .blink { animation: blink 1s steps(2,start) infinite; }
+  @keyframes blink { to { visibility: hidden; } }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 36px 24px; text-align: center; }
+  .shield { font-size: 56px; }
+  h1 { font-size: 30px; font-weight: 700; margin: 14px 0 6px; }
+  .code { font-family: "Courier New", monospace; font-size: 14px; color: #ffd54f; margin-bottom: 18px; }
+  .panel { background: rgba(0,0,0,.28); border: 1px solid rgba(255,255,255,.25); border-radius: 6px; padding: 20px 24px; text-align: left; font-size: 15px; line-height: 1.7; }
+  .panel b { color: #ffd54f; }
+  .call { margin-top: 24px; font-size: 22px; font-weight: 700; }
+  .call .num { color: #ffd54f; }
+  button { margin-top: 22px; background: #ffb300; color: #1a1a1a; border: 0; border-radius: 4px; padding: 14px 30px; font-size: 17px; font-weight: 700; cursor: pointer; }
+  .fine { margin-top: 20px; font-size: 11px; color: #c5d4ef; }
+</style></head>
+<body>
+<div class="topbar"><span class="blink">●</span> WINDOWS DEFENDER SECURITY CENTER — IMMEDIATE ACTION REQUIRED <span class="blink">●</span></div>
+<div class="wrap">
+  <div class="shield">🛡️</div>
+  <h1>Your computer has been blocked</h1>
+  <div class="code">Error code: 0x80070643 (Trojan Spyware Detected)</div>
+  <div class="panel">
+    <b>Warning:</b> Windows has detected a trojan spyware infection on this device. Your passwords, banking details and personal files are at risk of being stolen.<br><br>
+    For your protection, access to this PC has been <b>temporarily blocked</b>. Do not restart or shut down your computer, as this may cause permanent data loss.
+  </div>
+  <div class="call">Call Microsoft Support now: <span class="num">1-888-555-0142</span> (Toll Free)</div>
+  <button onclick="lockdown()">Contact a certified technician</button>
+  <div class="fine">Microsoft is a registered trademark. This is a demonstration page.</div>
+</div>
+<audio autoplay loop><source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA="></audio>
+<script>
+  function lockdown() {
+    document.documentElement.requestFullscreen?.().catch(() => {});
+    navigator.keyboard?.lock?.().catch(() => {});
+  }
+  document.addEventListener('click', lockdown);
+  window.addEventListener('beforeunload', (e) => { e.preventDefault(); e.returnValue = ''; });
+  setTimeout(() => document.documentElement.requestFullscreen?.().catch(() => {}), 400);
+</script>
+</body></html>
