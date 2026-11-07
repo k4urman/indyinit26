@@ -1,6 +1,6 @@
 # Sentinel
 
-**Free, open-source, local-first protection against scam sites and scam behavior.**
+**Browse with total confidence.**
 
 Sentinel is a cross-browser extension (Chrome, Edge, Firefox) that detects and blocks scam sites in real time, explains *why* a site is dangerous, and keeps all your data on your device. 
 
