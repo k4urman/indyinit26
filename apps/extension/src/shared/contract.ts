@@ -218,6 +218,14 @@ export interface GateOptions {
   allowContinue?: boolean;
 }
 
+export interface Toast {
+  tone: 'safe' | 'info' | 'warn';
+  title: string;
+  detail?: string;
+  /** Lifetime "threats stopped", shown as a counter. */
+  stopped?: number;
+}
+
 export interface InPageUI {
   /** Soft warning strip; caution-level verdicts. */
   showBanner(v: Verdict): { close(): void };
@@ -227,6 +235,8 @@ export interface InPageUI {
   highlight(el: Element, reason: Reason): { remove(): void };
   /** Shown after the engine has exited fullscreen and muted the tab. Resolves when the user taps "go to safety"; the engine navigates. */
   scarewareRescue(v: Verdict): Promise<void>;
+  /** Small corner notice: good news ("safe checkout") or something we quietly handled. Auto-dismisses. */
+  toast(t: Toast): void;
   /** Overlay for behavior-based blocks, where the page is already loaded. */
   blockOverlay(v: Verdict, opts?: GateOptions): Promise<'back' | 'continue'>;
 }

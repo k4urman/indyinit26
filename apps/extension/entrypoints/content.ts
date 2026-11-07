@@ -21,6 +21,16 @@ const TEXT_CAP = 20_000;
 const EXEC_LINK_RE = /\.(exe|msi|msix|scr|bat|cmd|vbs|js|jar|ps1|hta|apk|dmg|pkg|iso|zip|rar|7z)(\?|#|$)/i;
 const PHONE_RE = /(?:\+?1[\s.-]?)?\(?\b[2-9]\d{2}\)?[\s.-]\d{3}[\s.-]\d{4}\b/;
 
+/** Lifetime "threats stopped", for toasts. */
+async function stoppedCount(): Promise<number> {
+  try {
+    const { stats } = (await browser.storage.local.get('stats')) as { stats?: { blocked?: Record<string, number> } };
+    return Object.values(stats?.blocked ?? {}).reduce((a, b) => a + b, 0);
+  } catch {
+    return 0;
+  }
+}
+
 async function send<T>(msg: InternalRequest): Promise<T | null> {
   try {
     const r = (await browser.runtime.sendMessage(msg)) as Response<T> | undefined;
@@ -40,6 +50,7 @@ export default defineContentScript({
     const ui = createInPageUI();
     const behavior: BehaviorSignals = { ...EMPTY_BEHAVIOR };
     let elements = new Map<number, Element>();
+    let lastHints: ElementHint[] = [];
     let result: PageResult | null = null;
     let highlightHandles: { remove(): void }[] = [];
     let bannerShown = false;
@@ -47,6 +58,8 @@ export default defineContentScript({
     let rescued = false;
     const approved = new Set<string>(); // gate kinds the user already allowed on this page
     let mainPort: MessagePort | null = null;
+    let notificationsDenied = false;
+    let checkoutToastShown = false;
 
     // ---------------------------------------------------------------- main world
     window.addEventListener('message', (e) => {
@@ -72,6 +85,12 @@ export default defineContentScript({
       }
       if (behavior[m.kind]) return;
       behavior[m.kind] = true;
+      if (m.kind === 'clipboardCommand') {
+        ui.toast({ tone: 'info', title: 'Removed a hidden command from your clipboard', detail: 'This page tried to get you to paste and run it.', stopped: (await stoppedCount()) + 1 });
+      }
+      if (m.kind === 'notificationPrompt' && notificationsDenied) {
+        ui.toast({ tone: 'info', title: 'Blocked a sneaky notification request', detail: 'Risky sites use notifications to send fake alerts later.' });
+      }
       scheduleScan(150); // Hostile behaviour: re-judge quickly.
     }
 
@@ -193,6 +212,7 @@ export default defineContentScript({
       }
 
       const text = (document.body?.innerText ?? '').toLowerCase().replace(/\s+/g, ' ').slice(0, TEXT_CAP);
+      lastHints = hints;
       return { url: location.href, title: document.title, identity: identity(), text, forms, behavior: { ...behavior }, elements: hints };
     }
 
@@ -208,6 +228,12 @@ export default defineContentScript({
       if (v.severity === 'caution' || v.severity === 'danger') {
         const deny: MainWorldReply = { kind: 'denyNotifications' };
         mainPort?.postMessage(deny);
+        notificationsDenied = true;
+      }
+      // Good news is part of the job: a checkout that passes every check says so.
+      if (v.severity === 'safe' && !checkoutToastShown && [...elements.keys()].some((id) => lastHints[id]?.kind === 'cardForm')) {
+        checkoutToastShown = true;
+        ui.toast({ tone: 'safe', title: 'This checkout looks safe', detail: `No scam signs on ${v.domain}.`, stopped: await stoppedCount() });
       }
 
       for (const h of highlightHandles) h.remove();
@@ -416,7 +442,10 @@ export default defineContentScript({
     browser.runtime.onMessage.addListener((msg: unknown, _sender, sendResponse: (r: GateReply) => void) => {
       const m = msg as ContentRequest;
       if (m?.type !== 'ss:gate') return;
-      ui.gate(m.verdict, m.action).then((choice) => sendResponse({ choice }));
+      ui.gate(m.verdict, m.action).then(async (choice) => {
+        sendResponse({ choice });
+        if (choice === 'back') ui.toast({ tone: 'safe', title: 'Download stopped', detail: 'Nothing was saved to your computer.', stopped: await stoppedCount() });
+      });
       return true;
     });
   },

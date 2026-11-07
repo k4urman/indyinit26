@@ -1,45 +1,141 @@
 <!doctype html>
-<!-- Demo start page (start.sentinel.test). Every link below is a local fixture; nothing is a real site. -->
-<html><head><meta charset="utf-8"><title>Sentinel demo</title>
+<!-- Demo start page (start.sentinel.test). Every link is a local fixture; nothing here is a real site. -->
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sentinel — live demo</title>
 <style>
-  body { font-family: system-ui, sans-serif; max-width: 760px; margin: 40px auto; padding: 0 16px; color: #111827; line-height: 1.5; }
-  h1 { margin-bottom: 4px; } .sub { color: #6b7280; margin-top: 0; }
-  ol { padding-left: 22px; } li { margin: 0 0 18px; }
-  a.go { font-size: 19px; font-weight: 600; color: #1d4ed8; }
-  .what { color: #374151; } .expect { color: #15803d; font-size: 15px; }
-  code { background: #f3f4f6; padding: 1px 6px; border-radius: 4px; }
+  :root { --bg: #070b18; --text: #f5f7ff; --muted: #a8b0c8; --dim: #7c86a3; --line: rgba(255,255,255,.09);
+    --a1: #7c5cff; --a2: #22d3ee; --danger: #ff5d6c; --safe: #3ee089; --warn: #ffb547; }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--bg); color: var(--text); font: 400 17px/1.55 ui-sans-serif, -apple-system, "Segoe UI Variable", "Segoe UI", system-ui, Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased; min-height: 100vh; overflow-x: hidden; }
+  .glow { position: fixed; inset: -20% -10% auto; height: 80vh; pointer-events: none; z-index: 0;
+    background: radial-gradient(600px 380px at 25% 30%, rgba(124,92,255,.32), transparent 70%), radial-gradient(520px 340px at 75% 20%, rgba(34,211,238,.22), transparent 70%); filter: blur(10px); }
+  .wrap { position: relative; z-index: 1; max-width: 1120px; margin: 0 auto; padding: 28px 24px 80px; }
+  nav { display: flex; align-items: center; justify-content: space-between; }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 750; font-size: 20px; letter-spacing: -.3px; }
+  .pill { font-size: 13px; color: var(--muted); padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; background: rgba(255,255,255,.03); }
+  .pill b { color: var(--safe); font-weight: 650; }
+  header { text-align: center; padding: 72px 0 44px; }
+  .eyebrow { display: inline-flex; gap: 8px; align-items: center; font-size: 13.5px; font-weight: 600; color: #cfd6ff; padding: 6px 12px; border-radius: 999px;
+    background: linear-gradient(135deg, rgba(124,92,255,.2), rgba(34,211,238,.1)); border: 1px solid rgba(124,92,255,.35); }
+  h1 { font-size: clamp(40px, 6vw, 68px); line-height: 1.03; letter-spacing: -2px; font-weight: 800; margin: 22px auto 18px; max-width: 900px; }
+  h1 em { font-style: normal; background: linear-gradient(90deg, #a68bff, var(--a2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  header p { font-size: 20px; color: var(--muted); max-width: 640px; margin: 0 auto; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 44px auto 0; max-width: 860px; }
+  .stat { padding: 18px; border-radius: 18px; border: 1px solid var(--line); background: rgba(255,255,255,.03); text-align: left; }
+  .stat b { display: block; font-size: 30px; font-weight: 780; letter-spacing: -1px; }
+  .stat span { font-size: 14px; color: var(--dim); }
+  h2 { font-size: 15px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--dim); margin: 56px 0 18px; font-weight: 650; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+  a.card { position: relative; display: flex; flex-direction: column; gap: 10px; padding: 22px; border-radius: 22px; text-decoration: none; color: inherit;
+    background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02)); border: 1px solid var(--line);
+    transition: transform .2s cubic-bezier(.2,.9,.25,1.1), border-color .2s, box-shadow .2s; overflow: hidden; }
+  a.card:hover { transform: translateY(-3px); border-color: rgba(124,92,255,.5); box-shadow: 0 20px 50px rgba(0,0,0,.4), 0 0 0 1px rgba(124,92,255,.2); }
+  a.card::after { content: "Try it →"; position: absolute; right: 20px; top: 22px; font-size: 13.5px; font-weight: 650; color: #b9a8ff; opacity: 0; transform: translateX(-6px); transition: .2s; }
+  a.card:hover::after { opacity: 1; transform: none; }
+  .tag { align-self: flex-start; font-size: 12px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; padding: 4px 9px; border-radius: 999px; }
+  .t-red { color: #ffd6da; background: rgba(255,93,108,.14); border: 1px solid rgba(255,93,108,.3); }
+  .t-amber { color: #ffe6bf; background: rgba(255,181,71,.12); border: 1px solid rgba(255,181,71,.3); }
+  .t-green { color: #c9ffe0; background: rgba(62,224,137,.12); border: 1px solid rgba(62,224,137,.3); }
+  .t-violet { color: #ddd3ff; background: rgba(124,92,255,.16); border: 1px solid rgba(124,92,255,.35); }
+  .card h3 { font-size: 21px; line-height: 1.3; letter-spacing: -.3px; font-weight: 700; }
+  .card p { color: var(--muted); font-size: 15.5px; }
+  .expect { display: flex; gap: 8px; align-items: flex-start; margin-top: auto; padding-top: 12px; border-top: 1px solid var(--line); font-size: 14.5px; color: #cfe9ff; }
+  .expect::before { content: ""; flex: none; width: 8px; height: 8px; margin-top: 7px; border-radius: 50%; background: linear-gradient(135deg, var(--a1), var(--a2)); box-shadow: 0 0 10px var(--a2); }
+  .tips { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+  .tip { padding: 20px 22px; border-radius: 18px; border: 1px dashed rgba(255,255,255,.14); color: var(--muted); }
+  .tip b { color: var(--text); }
+  code { font: 500 14px ui-monospace, Menlo, Consolas, monospace; color: #cfd6ff; background: rgba(124,92,255,.14); padding: 2px 7px; border-radius: 6px; }
+  footer { margin-top: 56px; text-align: center; color: var(--dim); font-size: 14px; }
+  @media (max-width: 720px) { .stats { grid-template-columns: 1fr; } header { padding-top: 48px; } }
 </style></head>
 <body>
-<h1>Sentinel demo</h1>
-<p class="sub">Each link opens a fake scam page served from this computer. Nothing here is a real website.</p>
-<ol>
-  <li><a class="go" href="http://chase-secure-verify.com:8765/">"Your Chase account is locked"</a>
-    <div class="what">A text message link to a copy of Chase's sign-in page.</div>
-    <div class="expect">Expect: blocked, with the reasons and a button to the real chase.com.</div></li>
-  <li><a class="go" href="http://usps-redelivery.top:8765/">"Pay $1.99 to release your package"</a>
-    <div class="what">The most common text-message scam in the US.</div>
-    <div class="expect">Expect: blocked before any card number is typed.</div></li>
-  <li><a class="go" href="http://win-defender-alert.xyz:8765/">"Your computer is infected — call Microsoft"</a>
-    <div class="what">Fake virus alert that tries to lock the screen. Click anywhere on it.</div>
-    <div class="expect">Expect: fullscreen undone, tab muted, calm "your computer is fine" screen.</div></li>
-  <li><a class="go" href="http://win-defender-alert.xyz:8765/AnyDesk.exe">Download AnyDesk (after the fake alert)</a>
-    <div class="what">What the fake "Microsoft technician" asks for next.</div>
-    <div class="expect">Expect: download paused — "Did someone on the phone tell you to install this?"</div></li>
-  <li><a class="go" href="http://quantum-ai-profits.live:8765/">"Guaranteed 3% daily profit" trading platform</a>
-    <div class="what">Fake investment site — the costliest scam type.</div>
-    <div class="expect">Expect: warning banner; clicking "Connect Wallet" or typing a deposit pauses.</div></li>
-  <li><a class="go" href="http://captcha-verify-human.online:8765/">"Verify you are human" (fake CAPTCHA)</a>
-    <div class="what">The 2025–26 "ClickFix" trick: click the box, then it says press Win+R, Ctrl+V, Enter.</div>
-    <div class="expect">Expect: the hidden PowerShell command never reaches your clipboard (paste anywhere to see), and the page is blocked.</div></li>
-  <li><a class="go" href="http://irs-tax-resolution.help:8765/">"IRS: pay your tax debt with gift cards"</a>
-    <div class="what">Government imposter with an arrest threat.</div>
-    <div class="expect">Expect: blocked — no real agency takes gift cards.</div></li>
-  <li><a class="go" href="http://grannys-quilts.shop:8765/">Granny's Quilts (a real-looking small shop)</a>
-    <div class="what">Control: an ordinary small business on a new address.</div>
-    <div class="expect">Expect: nothing at Balanced. On Strict (toolbar → Settings), clicking the card field pauses once.</div></li>
-  <li><a class="go" href="http://1caf68ce.voag.cn:8765/">A site on the public phishing list</a>
-    <div class="what">One of ~389,000 known phishing hosts bundled with the extension.</div>
-    <div class="expect">Expect: replaced by the "known scam" page before it loads.</div></li>
-</ol>
-<p>Also try: right-click any link → <b>Check this link for scams</b>, or paste <code>paypa1.com</code> into the toolbar popup.</p>
+<div class="glow"></div>
+<div class="wrap">
+  <nav>
+    <div class="logo">
+      <svg width="30" height="30" viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7c5cff"/><stop offset="1" stop-color="#22d3ee"/></linearGradient></defs><path d="M12 2.5 4.5 5.5v6c0 4.6 3.1 8.6 7.5 10 4.4-1.4 7.5-5.4 7.5-10v-6z" fill="url(#g)"/><path d="m8.5 12 2.4 2.4 4.8-4.8" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Sentinel
+    </div>
+    <div class="pill"><b>●</b> Live demo · every page here is a local fake</div>
+  </nav>
+
+  <header>
+    <span class="eyebrow">Free · open source · runs on your device</span>
+    <h1>Stops scams <em>at the moment</em> you're about to pay, log in or call.</h1>
+    <p>Blocklists learn about a scam days after it's gone. Sentinel judges what a page is <i>doing</i> — and explains it in plain words.</p>
+    <div class="stats">
+      <div class="stat"><b>$15.9B</b><span>lost to fraud in the US in 2025 (FTC)</span></div>
+      <div class="stat"><b>5.5 hrs</b><span>median life of a phishing site</span></div>
+      <div class="stat"><b>18.4%</b><span>of new phishing caught by Safe Browsing, after 4.5 days</span></div>
+    </div>
+  </header>
+
+  <h2>Try a scam</h2>
+  <div class="grid">
+    <a class="card" href="http://chase-secure-verify.com:8765/">
+      <span class="tag t-red">Fake bank login</span>
+      <h3>"Your Chase account is locked"</h3>
+      <p>A text-message link to a pixel-perfect copy of Chase's sign-in page.</p>
+      <div class="expect">Blocked with three plain reasons and a button to the real chase.com.</div>
+    </a>
+    <a class="card" href="http://usps-redelivery.top:8765/">
+      <span class="tag t-red">Text-message scam</span>
+      <h3>"Pay $1.99 to release your package"</h3>
+      <p>The most reported scam in the US. Tiny fee, real card number.</p>
+      <div class="expect">Blocked before a single digit is typed.</div>
+    </a>
+    <a class="card" href="http://win-defender-alert.xyz:8765/">
+      <span class="tag t-amber">Fake virus alert</span>
+      <h3>"Your computer is infected — call Microsoft"</h3>
+      <p>Tries to lock your screen. Click anywhere on it to watch it try.</p>
+      <div class="expect">Full screen undone, sound muted, a calm "your computer is fine" screen.</div>
+    </a>
+    <a class="card" href="http://win-defender-alert.xyz:8765/AnyDesk.exe">
+      <span class="tag t-amber">Remote access</span>
+      <h3>"Install AnyDesk so I can help you"</h3>
+      <p>What the fake technician asks for next — then they empty the bank account.</p>
+      <div class="expect">Download paused: "Did someone on the phone tell you to install this?"</div>
+    </a>
+    <a class="card" href="http://captcha-verify-human.online:8765/">
+      <span class="tag t-violet">New in 2025–26</span>
+      <h3>"Verify you are human"</h3>
+      <p>A fake CAPTCHA copies a hidden PowerShell command and says: Win+R, Ctrl+V, Enter.</p>
+      <div class="expect">The command never reaches your clipboard. Paste anywhere to check.</div>
+    </a>
+    <a class="card" href="http://irs-tax-resolution.help:8765/">
+      <span class="tag t-red">Government imposter</span>
+      <h3>"IRS: pay with gift cards or be arrested"</h3>
+      <p>Threats, a deadline, and a demand no real agency ever makes.</p>
+      <div class="expect">Blocked — and told why gift cards are the giveaway.</div>
+    </a>
+    <a class="card" href="http://quantum-ai-profits.live:8765/">
+      <span class="tag t-amber">Investment scam</span>
+      <h3>"Guaranteed 3% daily profit"</h3>
+      <p>The costliest scam type: a slick dashboard with fake rising profits.</p>
+      <div class="expect">Warning with a link to check the firm on FINRA BrokerCheck.</div>
+    </a>
+    <a class="card" href="http://1caf68ce.voag.cn:8765/">
+      <span class="tag t-red">Known scam</span>
+      <h3>A site on the public phishing list</h3>
+      <p>One of ~389,000 known scam sites bundled inside the extension. No lookup needed.</p>
+      <div class="expect">Replaced by Sentinel's block page before it loads.</div>
+    </a>
+    <a class="card" href="http://grannys-quilts.shop:8765/">
+      <span class="tag t-green">Real small shop</span>
+      <h3>Granny's Quilts checkout</h3>
+      <p>An honest small business on a brand-new address. No false alarms.</p>
+      <div class="expect">A green "This checkout looks safe" note instead of a warning.</div>
+    </a>
+  </div>
+
+  <h2>Also try</h2>
+  <div class="tips">
+    <div class="tip"><b>Check a link before you open it.</b> Click the Sentinel icon and paste <code>paypa1.com</code>, or right-click any link → <i>Check this link for scams</i>.</div>
+    <div class="tip"><b>Turn it up for a parent or a kid.</b> Settings → slide to <i>Paranoid</i>. Risky sites lose their "Continue" button.</div>
+    <div class="tip"><b>Nothing leaves your computer.</b> Turn off Wi-Fi and run the demo again — every check still works.</div>
+  </div>
+
+  <footer>Sentinel · free and open source · nothing on this page is a real website</footer>
+</div>
 </body></html>
