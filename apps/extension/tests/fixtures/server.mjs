@@ -15,6 +15,8 @@ export const SITES = {
   'win-defender-alert.xyz': 'scareware.html',
   'quantum-ai-profits.live': 'crypto.html',
   'grannys-quilts.shop': 'legit-shop.html',
+  'captcha-verify-human.online': 'clickfix.html',
+  'irs-tax-resolution.help': 'irs-giftcard.html',
 };
 
 export function startFixtureServer(port = 8765) {

@@ -196,6 +196,11 @@ export function scorePage(input: ScoreInput): ScoreResult {
     if (b.historySpam) bw += 10;
     if (bw > 0) add(Math.min(bw, 45), R.lockedScreen());
     if (b.walletRequest && !trustedName) add(10, R.wallet());
+    // ClickFix: a page copying a shell command is never legitimate for these users; the
+    // "press Win+R / Ctrl+V" instructions alone are a weaker sign.
+    const clickFixText = countPhrases(text, 'clickFix');
+    if (b.clipboardCommand) add(60, R.clickFix());
+    else if (clickFixText >= 3) add(20, R.clickFix());
 
     // --- Combination floors -------------------------------------------------
     const pretends = Boolean(d.lookalike || d.combosquat || result.flags.impersonating) && !trustedName;
@@ -206,6 +211,9 @@ export function scorePage(input: ScoreInput): ScoreResult {
       result.flags.scareware = true;
     }
     if (f.seed > 0 && !trustedName) floor = Math.max(floor, 70);
+    if (b.clipboardCommand) floor = Math.max(floor, 90);
+    // A bank, company or agency asking for gift cards is always a scam (FTC).
+    if (gift >= 2 && (pretends || result.flags.impersonating)) floor = Math.max(floor, 85);
     if (invest >= 2 && (cryptoAddr || b.walletRequest)) floor = Math.max(floor, 60);
 
     // --- Elements to highlight ---------------------------------------------

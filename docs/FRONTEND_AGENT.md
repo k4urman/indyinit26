@@ -102,6 +102,8 @@ or message the background from in-page UI: return the user's choice and the engi
 - `scarewareRescue`: full-viewport calm screen: "This is a fake warning. Your computer
   is fine. Microsoft and Apple never show phone numbers in alerts. Do not call."
   One button: go to safety, which resolves the returned promise (the engine does the navigation).
+- `gate` and `blockOverlay` take `{ allowContinue: false }` for the Child preset / Paranoid on
+  risky, unfamiliar sites: show only the safe button (no "Continue", no "trust").
 - `blockOverlay`: same content and buttons as the blocked page, as a full-viewport
   overlay (used when the page is judged after it has loaded). Share the component.
 

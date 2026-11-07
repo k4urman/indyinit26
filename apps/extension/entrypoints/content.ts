@@ -205,6 +205,11 @@ export default defineContentScript({
       result = r;
       const { decision: d, verdict: v } = r;
 
+      if (v.severity === 'caution' || v.severity === 'danger') {
+        const deny: MainWorldReply = { kind: 'denyNotifications' };
+        mainPort?.postMessage(deny);
+      }
+
       for (const h of highlightHandles) h.remove();
       highlightHandles = [];
       for (const h of d.highlights) {
@@ -229,7 +234,7 @@ export default defineContentScript({
       if (d.page === 'block' && !pageHandled) {
         pageHandled = true;
         if (document.fullscreenElement) await document.exitFullscreen().catch(() => {});
-        const choice = await ui.blockOverlay(v);
+        const choice = await ui.blockOverlay(v, { allowContinue: !d.hardBlock });
         if (choice === 'back') await goSafe(v);
         else if (r.eventId) await send({ type: 'ss:override', eventId: r.eventId, userOverride: 'continued' });
         return;
@@ -298,7 +303,7 @@ export default defineContentScript({
       const logged = await send<{ id?: string }>({ type: 'ss:event', category: EVENT_CATEGORY[category], action: 'block', reasons: v.reasons });
       let choice: GateChoice;
       try {
-        choice = await ui.gate(v, action);
+        choice = await ui.gate(v, action, { allowContinue: !result?.decision.hardBlock });
       } finally {
         gating.delete(kind);
       }

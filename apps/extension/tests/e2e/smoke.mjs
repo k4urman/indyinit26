@@ -157,6 +157,46 @@ try {
     await page.close();
   }
 
+  // 5c. ClickFix fake CAPTCHA: the copied PowerShell command is swapped before it reaches the clipboard.
+  {
+    const page = await visit('captcha-verify-human.online', 1200);
+    await page.click('#verify');
+    await page.waitForTimeout(1500);
+    const { verdict } = await tabState(page);
+    await shot(page, '11-clickfix');
+    // Headless Chromium can't read the clipboard back; the page text alone scores ~20, so a
+    // danger verdict with the ClickFix reason means the clipboard hook fired (and swapped it).
+    check('clickfix: clipboard hook fired, page blocked', verdict?.severity === 'danger' && /prove you are human/.test(verdict?.reasons[0]?.title ?? ''), `score ${verdict?.score}`);
+    await page.close();
+  }
+
+  // 5d. Government imposter asking for gift cards.
+  {
+    const page = await visit('irs-tax-resolution.help');
+    const { verdict } = await tabState(page);
+    await shot(page, '12-irs-giftcards');
+    check('irs gift cards: danger', verdict?.severity === 'danger', `score ${verdict?.score}`);
+    await page.close();
+  }
+
+  // 5e. Child preset (Paranoid): the block has no "Continue" (checked by screenshot), and
+  //     notification prompts on risky pages are refused without asking.
+  {
+    await sw.evaluate(async () => {
+      const { settings } = await chrome.storage.local.get('settings');
+      await chrome.storage.local.set({ settings: { ...(settings ?? {}), enabled: true, aggressiveness: 100, preset: 'child' } });
+    });
+    const page = await visit('quantum-ai-profits.live');
+    await shot(page, '13-child-crypto-no-continue');
+    const perm = await page.evaluate(() => Notification.requestPermission());
+    check('risky page: notification prompt refused', perm === 'denied', perm);
+    await sw.evaluate(async () => {
+      const { settings } = await chrome.storage.local.get('settings');
+      await chrome.storage.local.set({ settings: { ...settings, aggressiveness: 33, preset: 'standard' } });
+    });
+    await page.close();
+  }
+
   // 6. Known-bad host from the bundled list is redirected before load.
   {
     const host = process.env.KNOWN_BAD_HOST;

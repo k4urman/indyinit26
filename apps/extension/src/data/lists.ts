@@ -72,6 +72,12 @@ export const PHRASES = {
     'sign in', 'log in', 'login', 'enter your password', 'verify your password', 'confirm your password',
     'social security number', 'mother\'s maiden name', 'card verification', 'cvv', 'online banking',
   ],
+  clickFix: [
+    'verify you are human', 'i am not a robot', "i'm not a robot", 'press windows + r', 'windows key + r', 'win + r',
+    'press win+r', 'windows+r', 'ctrl + v', 'ctrl+v', 'press enter', 'verification steps', 'paste the code',
+    'open the run dialog', 'press and hold the windows key', 'cmd + space', 'open terminal',
+    'click allow to', 'press allow to', 'click allow if you are not a robot',
+  ],
   seedPhrase: [
     'recovery phrase', 'seed phrase', 'secret phrase', 'mnemonic phrase', '12-word', '24-word', '12 word', '24 word',
     'private key', 'import wallet', 'validate wallet', 'synchronize wallet', 'rectify wallet', 'wallet validation',

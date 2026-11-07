@@ -38,6 +38,8 @@ export interface BehaviorSignals {
   historySpam: boolean; // 10+ pushState in 2 s (back-button hijack)
   notificationPrompt: boolean;
   walletRequest: boolean; // eth_requestAccounts / sendTransaction / solana connect
+  /** Page put a shell command on the clipboard ("ClickFix" fake CAPTCHA). We already swapped it. */
+  clipboardCommand: boolean;
 }
 
 export type ElementKind = 'passwordForm' | 'cardForm' | 'seedForm' | 'bankForm' | 'fileInput' | 'phone' | 'downloadLink' | 'walletButton';
@@ -54,4 +56,5 @@ export interface ElementHint {
 export const EMPTY_BEHAVIOR: BehaviorSignals = {
   fullscreen: false, keyboardLock: false, pointerLock: false, alertLoop: false, autoplayAudio: false,
   beforeunloadTrap: false, historySpam: false, notificationPrompt: false, walletRequest: false,
+  clipboardCommand: false,
 };

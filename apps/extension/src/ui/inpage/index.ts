@@ -4,7 +4,7 @@
  * No React — vanilla DOM/TypeScript to keep content scripts lean.
  */
 
-import type { InPageUI, GateAction, GateChoice, Verdict, Reason } from '../../shared/contract';
+import type { InPageUI, GateAction, GateChoice, GateOptions, Verdict, Reason } from '../../shared/contract';
 import { INPAGE, BTN } from '../strings';
 
 // ---------------------------------------------------------------------------
@@ -219,7 +219,7 @@ function showBanner(v: Verdict): { close(): void } {
 // 2. gate
 // ---------------------------------------------------------------------------
 
-function gate(v: Verdict, action: GateAction, opts: { heading?: string; allowTrust?: boolean } = {}): Promise<GateChoice> {
+function gate(v: Verdict, action: GateAction, opts: GateOptions & { heading?: string; allowTrust?: boolean } = {}): Promise<GateChoice> {
   return new Promise<GateChoice>((resolve) => {
     const { host, root } = createHost(`
       .overlay {
@@ -356,8 +356,8 @@ function gate(v: Verdict, action: GateAction, opts: { heading?: string; allowTru
     card.appendChild(heading);
     card.appendChild(detail);
     card.appendChild(btnBack);
-    card.appendChild(btnContinue);
-    if (opts.allowTrust !== false) card.appendChild(btnTrust);
+    if (opts.allowContinue !== false) card.appendChild(btnContinue);
+    if (opts.allowTrust !== false && opts.allowContinue !== false) card.appendChild(btnTrust);
     overlay.appendChild(card);
     root.appendChild(overlay);
 
@@ -603,8 +603,8 @@ function scarewareRescue(_v: Verdict): Promise<void> {
 // 5. blockOverlay: page judged dangerous after it loaded
 // ---------------------------------------------------------------------------
 
-async function blockOverlay(v: Verdict): Promise<'back' | 'continue'> {
-  const choice = await gate(v, 'personalInfo', { heading: INPAGE.blockHeading, allowTrust: false });
+async function blockOverlay(v: Verdict, opts: GateOptions = {}): Promise<'back' | 'continue'> {
+  const choice = await gate(v, 'personalInfo', { ...opts, heading: INPAGE.blockHeading, allowTrust: false });
   return choice === 'back' ? 'back' : 'continue';
 }
 
@@ -613,5 +613,5 @@ async function blockOverlay(v: Verdict): Promise<'back' | 'continue'> {
 // ---------------------------------------------------------------------------
 
 export function createInPageUI(): InPageUI {
-  return { showBanner, gate: (v, a) => gate(v, a), highlight, scarewareRescue, blockOverlay };
+  return { showBanner, gate: (v, a, o) => gate(v, a, o), highlight, scarewareRescue, blockOverlay };
 }

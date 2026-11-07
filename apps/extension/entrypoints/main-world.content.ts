@@ -38,9 +38,11 @@ export default defineContentScript({
 
     const pending = new Map<number, (allow: boolean) => void>();
     let lockdown = false;
+    let denyNotifications = false;
     port.onmessage = (e: MessageEvent<MainWorldReply>) => {
       const r = e.data;
       if (r.kind === 'lockdown') lockdown = true;
+      if (r.kind === 'denyNotifications') denyNotifications = true;
       if (r.kind === 'walletDecision') {
         pending.get(r.id)?.(r.allow);
         pending.delete(r.id);
@@ -90,7 +92,18 @@ export default defineContentScript({
     refuse(Element.prototype, 'requestPointerLock', 'pointerLock');
     const kb = (navigator as Navigator & { keyboard?: { lock?: () => Promise<void> } }).keyboard;
     refuse(kb, 'lock', 'keyboardLock');
-    wrap(Notification, 'requestPermission', () => report('notificationPrompt'));
+    // "Click Allow to prove you're not a robot": on risky pages, say no without prompting.
+    if (typeof Notification !== 'undefined') {
+      const origPerm = Notification.requestPermission.bind(Notification);
+      Notification.requestPermission = ((cb?: NotificationPermissionCallback) => {
+        report('notificationPrompt');
+        if (denyNotifications) {
+          cb?.('denied');
+          return Promise.resolve('denied' as NotificationPermission);
+        }
+        return origPerm(cb);
+      }) as typeof Notification.requestPermission;
+    }
 
     // Alert loops: after 3 dialogs in 10 s, report and stop showing them.
     const dialogTimes: number[] = [];
@@ -132,6 +145,50 @@ export default defineContentScript({
     wrap(HTMLMediaElement.prototype, 'play', function (this: unknown) {
       const el = this as HTMLMediaElement | undefined;
       if (activation && !activation.hasBeenActive && el && !el.muted) report('autoplayAudio');
+    });
+
+    // "ClickFix": a fake CAPTCHA copies a shell command, then says "press Win+R, Ctrl+V, Enter".
+    // Swap the command for a harmless note before it reaches the clipboard.
+    const SHELL_RE = /\b(powershell|pwsh|mshta|cmd(\.exe)?\s*\/c|rundll32|regsvr32|certutil|bitsadmin|wscript|cscript|msiexec|iex|invoke-expression|invoke-webrequest|frombase64string|curl\s.+\|\s*(ba|z)?sh|wget\s.+\|\s*(ba|z)?sh|osascript|base64\s+-d)\b/i;
+    const SAFE_TEXT = 'ScamShield removed a hidden command that this website tried to copy. Do not paste anything a website tells you to run.';
+    const isShell = (t: unknown) => typeof t === 'string' && SHELL_RE.test(t);
+    const clip = (navigator as Navigator & { clipboard?: Clipboard }).clipboard;
+    if (clip && typeof Clipboard !== 'undefined') {
+      const origWrite = Clipboard.prototype.writeText;
+      Clipboard.prototype.writeText = function (this: Clipboard, text: string) {
+        if (isShell(text)) {
+          report('clipboardCommand');
+          return origWrite.call(this, SAFE_TEXT);
+        }
+        return origWrite.call(this, text);
+      };
+    }
+    const origExec = Document.prototype.execCommand;
+    Document.prototype.execCommand = function (this: Document, cmd: string, ...rest: unknown[]) {
+      if (/^(copy|cut)$/i.test(cmd)) {
+        const active = this.activeElement;
+        const field = active instanceof HTMLTextAreaElement || active instanceof HTMLInputElement ? active : null;
+        const selected = field ? field.value.slice(field.selectionStart ?? 0, field.selectionEnd ?? field.value.length) : String(this.getSelection?.() ?? '');
+        if (isShell(selected)) {
+          report('clipboardCommand');
+          if (field) {
+            field.value = SAFE_TEXT;
+            field.select();
+          } else {
+            this.getSelection()?.removeAllRanges();
+          }
+        }
+      }
+      return (origExec as (...a: unknown[]) => boolean).call(this, cmd, ...rest);
+    };
+    // Kits that set the data in their own copy handler: check after they run.
+    window.addEventListener('copy', (e) => {
+      const data = e.clipboardData?.getData('text/plain');
+      if (isShell(data)) {
+        report('clipboardCommand');
+        e.clipboardData!.setData('text/plain', SAFE_TEXT);
+        e.preventDefault();
+      }
     });
 
     // Wallets (EIP-1193). Wallet extensions inject `window.ethereum` around now, so wrap lazily.

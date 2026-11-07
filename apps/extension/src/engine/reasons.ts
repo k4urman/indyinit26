@@ -136,6 +136,11 @@ export const R = {
     title: 'It tried to take over your screen',
     detail: 'It went full screen, played sounds or kept popping up messages so you feel trapped. We stopped it.',
   }),
+  clickFix: (): Reason => ({
+    kind: 'hostileBehavior',
+    title: 'This is a fake "prove you are human" check',
+    detail: 'It tried to copy a hidden command so you would paste and run it. That gives scammers control of your computer. We replaced it with a harmless note.',
+  }),
   wallet: (): Reason => ({
     kind: 'hostileBehavior',
     title: 'It wants to connect to your crypto wallet',

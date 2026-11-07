@@ -186,6 +186,27 @@ describe('scoring: demo scenarios', () => {
   });
 });
 
+describe('scoring: more scam types', () => {
+  it('ClickFix: a page copying a shell command is blocked', () => {
+    const r = score('https://captcha-verify-human.online/', {
+      title: 'Just a moment... Verify you are human',
+      text: 'verify you are human. press windows + r. press ctrl + v. press enter',
+      behavior: { ...EMPTY_BEHAVIOR, clipboardCommand: true },
+    });
+    expect(r.score).toBeGreaterThanOrEqual(90);
+    expect(r.reasons[0]!.title).toMatch(/prove you are human/);
+  });
+
+  it('government imposter asking for gift cards is blocked', () => {
+    const r = score('https://irs-tax-resolution.help/', {
+      title: 'IRS Tax Resolution - Account Verification',
+      identity: ['IRS Tax Resolution Center'],
+      text: 'final notice: unpaid taxes. buy apple gift cards or google play cards, scratch the back, and send the card number',
+    });
+    expect(r.score).toBeGreaterThanOrEqual(85);
+  });
+});
+
 describe('scoring: false positives', () => {
   it('real Chase login is safe', () => {
     const r = score('https://secure.chase.com/web/auth', {
