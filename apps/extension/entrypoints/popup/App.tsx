@@ -29,7 +29,7 @@ body { width: 380px; min-height: 540px; overflow-x: hidden; }
   background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
   padding: 16px 16px 14px; border-radius: 0 0 18px 18px; }
 .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 20px; color: #fff; }
-.logo img { filter: brightness(0) invert(1); }
+.logo img { border-radius: 8px; background: #fff; padding: 2px; }
 .switch { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: rgba(255,255,255,.8); }
 .track { position: relative; width: 51px; height: 31px; border-radius: 99px; background: rgba(255,255,255,.3); transition: background .2s; }
 .track[aria-checked="true"] { background: #34c759; }
