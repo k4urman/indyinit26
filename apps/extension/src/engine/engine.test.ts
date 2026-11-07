@@ -68,6 +68,21 @@ describe('domain', () => {
     expect(analyseDomain(parseUrl('https://chase.com.account-verify.net')!).combosquat?.name).toBe('Chase');
   });
 
+  it('treats the exact brand name under another ending by brand type', () => {
+    expect(analyseDomain(parseUrl('https://metamask.lt')!).lookalike?.how).toBe('tld');
+    expect(score('https://chase.xyz/').score).toBeGreaterThanOrEqual(40); // banks don't use random endings
+    expect(analyseDomain(parseUrl('https://google.com.qa')!).lookalike).toBeNull(); // Google owns many
+    expect(analyseDomain(parseUrl('https://ebay.es')!).lookalike).toBeNull();
+    expect(analyseDomain(parseUrl('https://mail.microsoft')!).official?.name).toBe('Microsoft');
+    expect(analyseDomain(parseUrl('https://huaweicloud-dns.cn')!).combosquat).toBeNull();
+  });
+
+  it('requires typos to keep the first letter', () => {
+    expect(analyseDomain(parseUrl('https://psbank.ru')!).lookalike).toBeNull();
+    expect(analyseDomain(parseUrl('https://i-mobile.co.jp')!).lookalike).toBeNull();
+    expect(analyseDomain(parseUrl('https://paypai.com')!).lookalike?.brand.name).toBe('PayPal');
+  });
+
   it('does not flag real brand domains or ordinary words', () => {
     expect(analyseDomain(parseUrl('https://secure.chase.com')!).official?.name).toBe('Chase');
     expect(analyseDomain(parseUrl('https://www.apply.com')!).lookalike).toBeNull();

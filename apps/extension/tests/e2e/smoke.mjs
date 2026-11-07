@@ -4,50 +4,23 @@
 //
 // CHROME=/path/to/chrome overrides the browser. Branded Chrome 137+ ignores
 // --load-extension; use Chromium or Chrome for Testing if extensions don't load.
-import { createServer } from 'node:http';
-import { readFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright-core';
+import { startFixtureServer } from '../fixtures/server.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const EXT = join(here, '..', '..', '.output', 'chrome-mv3');
-const FIX = join(here, '..', 'fixtures');
 const PORT = 8765;
 
-const SITES = {
-  'chase-secure-verify.com': 'chase-login.html',
-  'usps-redelivery.top': 'usps-fee.html',
-  'win-defender-alert.xyz': 'scareware.html',
-  'quantum-ai-profits.live': 'crypto.html',
-  'grannys-quilts.shop': 'legit-shop.html',
-};
-
-const server = createServer((req, res) => {
-  const host = (req.headers.host ?? '').split(':')[0];
-  if (req.url?.endsWith('.exe')) {
-    res.writeHead(200, { 'content-type': 'application/octet-stream', 'content-disposition': 'attachment; filename="AnyDesk.exe"' });
-    // Big enough that the download is still running when we pause it.
-    const chunk = Buffer.alloc(64 * 1024);
-    let sent = 0;
-    const t = setInterval(() => {
-      res.write(chunk);
-      if ((sent += chunk.length) > 8 * 1024 * 1024) (clearInterval(t), res.end());
-    }, 100);
-    req.on('close', () => clearInterval(t));
-    return;
-  }
-  const file = SITES[host];
-  if (!file) return res.writeHead(404).end('not found');
-  res.writeHead(200, { 'content-type': 'text/html' }).end(readFileSync(join(FIX, file)));
-});
-await new Promise((r) => server.listen(PORT, '127.0.0.1', r));
+const server = await startFixtureServer(PORT);
 
 const profile = mkdtempSync(join(tmpdir(), 'ss-e2e-'));
 const ctx = await chromium.launchPersistentContext(profile, {
   viewport: { width: 1100, height: 720 },
-  executablePath: process.env.CHROME ?? '/usr/bin/google-chrome-stable',
+  executablePath: process.env.CHROME ?? chromium.executablePath(),
   headless: false,
   acceptDownloads: true,
   args: [

@@ -16,6 +16,8 @@ npm run compile        # type-check
 npm run lists          # rebuild bundled reputation data (needs network)
 npm run e2e            # end-to-end smoke test against tests/fixtures (build first)
 npm run lint:firefox   # Mozilla's add-on validator on the Firefox build
+npm run demo           # live demo: fixture scam pages + browser with the extension
+npm run eval -- <openphish.txt> <phishing-db.txt> <tranco.zip>   # URL-only metrics → eval/results.md
 ```
 
 `npm run e2e` needs a Chromium that still accepts `--load-extension` (branded Chrome 137+

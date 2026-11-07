@@ -14,13 +14,16 @@
     "postinstall": "wxt prepare",
     "lists": "node scripts/build-lists.ts",
     "e2e": "node tests/e2e/smoke.mjs",
-    "lint:firefox": "wxt build -b firefox --mv3 && npx -y web-ext lint -s .output/firefox-mv3 --self-hosted"
+    "lint:firefox": "wxt build -b firefox --mv3 && npx -y web-ext lint -s .output/firefox-mv3 --self-hosted",
+    "demo": "node tests/demo/demo.mjs",
+    "eval": "node --import tsx eval/url-only.ts"
   },
   "devDependencies": {
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@wxt-dev/module-react": "^1.2.2",
     "playwright-core": "^1.65.0",
+    "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vitest": "^5.1.0",
     "wxt": "^0.21.5"

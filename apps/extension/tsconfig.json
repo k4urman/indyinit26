@@ -5,6 +5,6 @@
     "noUncheckedIndexedAccess": true,
     "jsx": "react-jsx"
   },
-  // scripts/ runs under Node (see package.json "lists"), not in the extension.
-  "exclude": ["scripts", "node_modules", ".output"]
+  // scripts/, eval/ and tests/ run under Node (see package.json "lists"), not in the extension.
+  "exclude": ["scripts", "eval", "tests", "node_modules", ".output"]
 }

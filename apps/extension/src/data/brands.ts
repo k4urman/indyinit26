@@ -30,7 +30,7 @@ export const BRANDS: Brand[] = [
   { name: 'Visa', names: ['visa'], domains: ['visa.com'], kind: 'payment' },
   { name: 'Mastercard', names: ['mastercard'], domains: ['mastercard.com', 'mastercard.us'], kind: 'payment' },
   // Tech
-  { name: 'Microsoft', names: ['microsoft', 'outlook', 'office365', 'office 365', 'onedrive', 'hotmail'], domains: ['microsoft.com', 'live.com', 'office.com', 'microsoftonline.com', 'outlook.com', 'office365.com', 'hotmail.com', 'onedrive.com', 'sharepoint.com', 'windows.com', 'bing.com', 'msn.com', 'azure.com', 'skype.com', 'xbox.com'], kind: 'tech' },
+  { name: 'Microsoft', names: ['microsoft', 'outlook', 'office365', 'office 365', 'onedrive', 'hotmail'], domains: ['microsoft.com', 'live.com', 'office.com', 'microsoftonline.com', 'microsoftonline-p.com', 'outlook.com', 'office365.com', 'hotmail.com', 'onedrive.com', 'sharepoint.com', 'windows.com', 'bing.com', 'msn.com', 'azure.com', 'skype.com', 'xbox.com'], kind: 'tech' },
   { name: 'Apple', names: ['apple', 'icloud', 'itunes', 'apple id'], domains: ['apple.com', 'icloud.com', 'itunes.com', 'me.com'], kind: 'tech' },
   { name: 'Google', names: ['google', 'gmail'], domains: ['google.com', 'gmail.com', 'youtube.com', 'gstatic.com', 'googleapis.com', 'withgoogle.com', 'android.com', 'chrome.com'], kind: 'tech' },
   { name: 'Netflix', names: ['netflix'], domains: ['netflix.com'], kind: 'tech' },
@@ -75,7 +75,7 @@ export const BRANDS: Brand[] = [
 ];
 
 /** Short brand terms that are also common words; only matched in hostnames, never in page text. */
-export const HOSTNAME_ONLY_TERMS = new Set(['chase', 'target', 'apple', 'citi', 'ups', 'visa', 'meta', 'att', 'ssa', 'dmv', 'pnc', 'irs']);
+export const HOSTNAME_ONLY_TERMS = new Set(['icloud', 'norton', 'chase', 'target', 'apple', 'citi', 'ups', 'visa', 'meta', 'att', 'ssa', 'dmv', 'pnc', 'irs']);
 
 const OFFICIAL = new Map<string, Brand>();
 for (const b of BRANDS) for (const d of b.domains) OFFICIAL.set(d, b);

@@ -1,0 +1,39 @@
+<!doctype html>
+<!-- Demo start page (start.scamshield.test). Every link below is a local fixture; nothing is a real site. -->
+<html><head><meta charset="utf-8"><title>ScamShield demo</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 760px; margin: 40px auto; padding: 0 16px; color: #111827; line-height: 1.5; }
+  h1 { margin-bottom: 4px; } .sub { color: #6b7280; margin-top: 0; }
+  ol { padding-left: 22px; } li { margin: 0 0 18px; }
+  a.go { font-size: 19px; font-weight: 600; color: #1d4ed8; }
+  .what { color: #374151; } .expect { color: #15803d; font-size: 15px; }
+  code { background: #f3f4f6; padding: 1px 6px; border-radius: 4px; }
+</style></head>
+<body>
+<h1>ScamShield demo</h1>
+<p class="sub">Each link opens a fake scam page served from this computer. Nothing here is a real website.</p>
+<ol>
+  <li><a class="go" href="http://chase-secure-verify.com:8765/">"Your Chase account is locked"</a>
+    <div class="what">A text message link to a copy of Chase's sign-in page.</div>
+    <div class="expect">Expect: blocked, with the reasons and a button to the real chase.com.</div></li>
+  <li><a class="go" href="http://usps-redelivery.top:8765/">"Pay $1.99 to release your package"</a>
+    <div class="what">The most common text-message scam in the US.</div>
+    <div class="expect">Expect: blocked before any card number is typed.</div></li>
+  <li><a class="go" href="http://win-defender-alert.xyz:8765/">"Your computer is infected — call Microsoft"</a>
+    <div class="what">Fake virus alert that tries to lock the screen. Click anywhere on it.</div>
+    <div class="expect">Expect: fullscreen undone, tab muted, calm "your computer is fine" screen.</div></li>
+  <li><a class="go" href="http://win-defender-alert.xyz:8765/AnyDesk.exe">Download AnyDesk (after the fake alert)</a>
+    <div class="what">What the fake "Microsoft technician" asks for next.</div>
+    <div class="expect">Expect: download paused — "Did someone on the phone tell you to install this?"</div></li>
+  <li><a class="go" href="http://quantum-ai-profits.live:8765/">"Guaranteed 3% daily profit" trading platform</a>
+    <div class="what">Fake investment site — the costliest scam type.</div>
+    <div class="expect">Expect: warning banner; clicking "Connect Wallet" or typing a deposit pauses.</div></li>
+  <li><a class="go" href="http://grannys-quilts.shop:8765/">Granny's Quilts (a real-looking small shop)</a>
+    <div class="what">Control: an ordinary small business on a new address.</div>
+    <div class="expect">Expect: nothing at Balanced. On Strict (toolbar → Settings), clicking the card field pauses once.</div></li>
+  <li><a class="go" href="http://1caf68ce.voag.cn:8765/">A site on the public phishing list</a>
+    <div class="what">One of ~389,000 known phishing hosts bundled with the extension.</div>
+    <div class="expect">Expect: replaced by the "known scam" page before it loads.</div></li>
+</ol>
+<p>Also try: right-click any link → <b>Check this link for scams</b>, or paste <code>paypa1.com</code> into the toolbar popup.</p>
+</body></html>

@@ -136,9 +136,19 @@ function isUserContentRoot(h: string): boolean {
   return h.split('.').length >= 3 || h === 'forms.gle';
 }
 
+/** Endings owned by the company itself (ICANN "brand TLDs"): mail.microsoft is Microsoft's. */
+const BRAND_TLDS: Record<string, string> = {
+  microsoft: 'Microsoft', windows: 'Microsoft', office: 'Microsoft', xbox: 'Microsoft', bing: 'Microsoft',
+  amazon: 'Amazon', google: 'Google', youtube: 'Google', gmail: 'Google', apple: 'Apple', chase: 'Chase',
+  citi: 'Citi', netflix: 'Netflix', visa: 'Visa', ups: 'UPS', fedex: 'FedEx', dhl: 'DHL', target: 'Target',
+  walmart: 'Walmart', ebay: 'eBay', bestbuy: 'Best Buy', americanexpress: 'American Express', amex: 'American Express',
+  capitalone: 'Capital One', wellsfargo: 'Wells Fargo', pnc: 'PNC', att: 'AT&T', verizon: 'Verizon', adobe: 'Adobe',
+};
+
 export interface DomainFindings {
   official: Brand | null; // this IS the brand's real domain
-  lookalike: { brand: Brand; how: 'typo' | 'homoglyph' | 'idn' } | null;
+  /** 'tld': the brand's exact name under another ending (chase.xyz, metamask.lt). */
+  lookalike: { brand: Brand; how: 'typo' | 'homoglyph' | 'idn' | 'tld' } | null;
   combosquat: Brand | null; // "paypal-secure-login.xyz", "chase.com.verify-account.net"
   riskyTld: boolean;
   trustedHostAbuse: string | null; // the free host the page sits on
@@ -156,12 +166,15 @@ const BRAND_LABELS: { brand: Brand; label: string; skel: string }[] = BRANDS.fla
 );
 
 /** Brand terms usable inside hostnames (no spaces, at least 4 chars to avoid "ups" in "groups"). */
-const HOST_TERMS: { brand: Brand; term: string }[] = BRANDS.flatMap((brand) =>
-  brand.names.filter((n) => !n.includes(' ') && n.length >= 4).map((term) => ({ brand, term: skeleton(term.replace(/[^a-z0-9]/g, '')) })),
+const HOST_TERMS: { brand: Brand; term: string; raw: string }[] = BRANDS.flatMap((brand) =>
+  brand.names
+    .filter((n) => !n.includes(' ') && n.length >= 4)
+    .map((raw) => ({ brand, raw, term: skeleton(raw.replace(/[^a-z0-9]/g, '')) })),
 );
 
 export function analyseDomain(p: ParsedUrl): DomainFindings {
-  const official = brandOfDomain(p.domain) ?? null;
+  const brandTld = BRAND_TLDS[p.suffix];
+  const official = brandOfDomain(p.domain) ?? (brandTld ? (BRANDS.find((b) => b.name === brandTld) ?? null) : null);
   const bare = p.hostname.replace(/^www\./, '');
   const f: DomainFindings = {
     official,
@@ -188,10 +201,19 @@ export function analyseDomain(p: ParsedUrl): DomainFindings {
       f.lookalike = { brand, how: 'homoglyph' };
       break;
     }
+    // Same name, other ending: global companies own dozens (google.com.qa, ebay.es), so only
+    // brands that don't (banks, payment, crypto, delivery, government) count here.
+    if (decodedLabel === label) {
+      if (brand.kind === 'tech' || brand.kind === 'social' || brand.kind === 'shop') continue;
+      f.lookalike = { brand, how: 'tld' };
+      break;
+    }
     // Short names ("apple", "chase") are one typo away from real words ("apply",
     // "chasm"), so they only count as lookalikes via character swaps (caught above).
     const maxDist = label.length >= 9 ? 2 : label.length >= 6 ? 1 : 0;
-    if (maxDist > 0 && editDistance(decodedLabel, label, maxDist) <= maxDist) {
+    // Real typosquats keep the first letter ("paypai", not "qaypal"); requiring it drops
+    // most accidental matches between unrelated names ("psbank" vs "usbank").
+    if (maxDist > 0 && decodedLabel[0] === label[0] && editDistance(decodedLabel, label, maxDist) <= maxDist) {
       f.lookalike = { brand, how: 'typo' };
       break;
     }
@@ -200,14 +222,16 @@ export function analyseDomain(p: ParsedUrl): DomainFindings {
   // Brand name inside the hostname of an unrelated domain.
   const host = skeleton(p.hostname.replace(/[^a-z0-9.\-]/g, ''));
   const hostCompact = host.replace(/\./g, '');
-  for (const { brand, term } of HOST_TERMS) {
+  for (const { brand, term, raw } of HOST_TERMS) {
     if (hostCompact.includes(term)) {
       // "paypal-login", "paypalsecure" count; common words glued into others ("targeted",
       // "applebees") don't, so those brands need the term as a whole label part.
       const words = host.split(/[.\-]/);
-      const loose = !HOSTNAME_ONLY_TERMS.has(term) && term.length >= 5;
+      const loose = !HOSTNAME_ONLY_TERMS.has(raw) && term.length >= 5;
       const asWord = words.some((w) => w === term || (loose && (w.startsWith(term) || w.endsWith(term))));
-      if (asWord) {
+      // google.com.qa, ebay.es: a global brand's own name as the whole site name, not a combo.
+      const globalBrand = brand.kind === 'tech' || brand.kind === 'social' || brand.kind === 'shop';
+      if (asWord && !(globalBrand && skeleton(decodedLabel) === term)) {
         f.combosquat = brand;
         break;
       }

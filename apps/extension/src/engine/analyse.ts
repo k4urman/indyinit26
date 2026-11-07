@@ -28,12 +28,14 @@ export async function analyse(url: string, settings: Settings, page?: PageSignal
   const listed = lookup(lists, parsed.hostname);
   const result = scorePage({ url: parsed, domain, page, knownBad, listed, topSite });
   const trusted = listed === 'allow' || (!domain.trustedHostAbuse && (domain.official !== null || topSite));
+  const severity = listed === 'allow' ? 'safe' : severityOf(result.score, settings.aggressiveness, Boolean(page) || trusted);
   const verdict: Verdict = {
     url: parsed.url,
     domain: parsed.domain,
-    severity: listed === 'allow' ? 'safe' : severityOf(result.score, settings.aggressiveness, Boolean(page) || trusted),
+    severity,
     score: result.score,
-    reasons: result.reasons,
+    // A safe verdict carries no reasons: weak signs below the threshold would only worry people.
+    reasons: severity === 'safe' ? [] : result.reasons,
     ...(result.safeAlternative ? { safeAlternative: result.safeAlternative } : {}),
     depth: 'basic', // no cloud lookups in Phase 1
     checkedAt: Date.now(),
