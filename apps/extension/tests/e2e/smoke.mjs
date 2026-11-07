@@ -231,7 +231,7 @@ try {
     await ext.goto(sw.url().replace('background.js', 'popup.html'));
     await ext.waitForTimeout(1000);
     await shot(ext, '10-popup');
-    check('popup renders', /ScamShield/.test(await ext.locator('body').innerText()));
+    check('popup renders', /Sentinel/.test(await ext.locator('body').innerText()));
     check('stats counted', (stats.stats?.blocked?.page ?? 0) >= 2, JSON.stringify(stats.stats?.blocked));
     await ext.close();
   }

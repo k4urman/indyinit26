@@ -4,7 +4,7 @@ import { defineConfig } from 'wxt';
 export default defineConfig({
   modules: ['@wxt-dev/module-react'],
   manifest: ({ browser }) => ({
-    name: 'ScamShield',
+    name: 'Sentinel',
     description: 'Free, private, real-time protection from scam websites.',
     permissions: [
       'storage',
@@ -18,11 +18,11 @@ export default defineConfig({
     ],
     host_permissions: ['<all_urls>'],
     // Toolbar button for the badge; the popup entrypoint adds default_popup.
-    action: { default_title: 'ScamShield' },
+    action: { default_title: 'Sentinel' },
     ...(browser === 'firefox'
       ? { browser_specific_settings: {
           gecko: {
-            id: 'scamshield@indyinit26',
+            id: 'sentinel@indyinit26',
             strict_min_version: '140.0',
             // Nothing leaves the device (plan.md §6).
             data_collection_permissions: { required: ['none'] },

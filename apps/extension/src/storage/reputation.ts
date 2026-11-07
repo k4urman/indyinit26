@@ -15,7 +15,7 @@ async function load<T>(path: string, parse: (r: Response) => Promise<T>, fallbac
     return await parse(res);
   } catch (e) {
     // Fail open: missing data means fewer detections, never a broken browser.
-    console.warn(`[scamshield] could not load ${path}`, e);
+    console.warn(`[sentinel] could not load ${path}`, e);
     return fallback;
   }
 }

@@ -8,7 +8,7 @@ Don't change it on your own — propose changes to the backend owner.
 
 ## Product in one paragraph
 
-ScamShield is a free, open-source browser extension (Chrome, Edge, Firefox) that
+Sentinel is a free, open-source browser extension (Chrome, Edge, Firefox) that
 stops scams at the moment of harm: before someone types a password into a fake
 bank page, pays a "$1.99 USPS fee", calls the number on a fake virus alert, or
 installs remote-control software. Users are children, older adults and young

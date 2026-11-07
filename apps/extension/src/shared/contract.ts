@@ -7,7 +7,7 @@
  */
 
 // Working name from plan.md. Every user-visible mention goes through this.
-export const BRAND = 'ScamShield';
+export const BRAND = 'Sentinel';
 
 // ---------------------------------------------------------------------------
 // Settings (storage.local, key "settings") — plan.md §2.4, §8

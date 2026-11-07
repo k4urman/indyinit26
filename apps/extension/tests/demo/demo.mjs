@@ -52,12 +52,12 @@ ctx.on('close', stop);
 process.on('SIGINT', () => void ctx.close());
 
 const page = ctx.pages()[0] ?? (await ctx.newPage());
-await page.goto(`http://start.scamshield.test:${PORT}/`);
+await page.goto(`http://start.sentinel.test:${PORT}/`);
 if (process.env.DEMO_CHECK) {
   // Self-check: prove the launcher works, then exit.
   await page.screenshot({ path: process.env.DEMO_CHECK });
   console.log(`demo ok: ${await page.title()}`);
   await ctx.close();
 } else {
-  console.log(`Demo running. Start page: http://start.scamshield.test:${PORT}/  (close the browser to stop)`);
+  console.log(`Demo running. Start page: http://start.sentinel.test:${PORT}/  (close the browser to stop)`);
 }

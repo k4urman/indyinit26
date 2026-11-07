@@ -76,7 +76,7 @@ export async function expireLog(days: number): Promise<void> {
 export async function exportLog(format: 'json' | 'csv'): Promise<{ filename: string; text: string }> {
   const rows = await db.events.orderBy('ts').toArray();
   const stamp = today();
-  if (format === 'json') return { filename: `scamshield-log-${stamp}.json`, text: JSON.stringify(rows, null, 2) };
+  if (format === 'json') return { filename: `sentinel-log-${stamp}.json`, text: JSON.stringify(rows, null, 2) };
   const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
   const header = ['time', 'domain', 'url', 'category', 'action', 'reasons', 'userOverride'];
   const lines = rows.map((e) =>
@@ -84,5 +84,5 @@ export async function exportLog(format: 'json' | 'csv'): Promise<{ filename: str
       .map(esc)
       .join(','),
   );
-  return { filename: `scamshield-log-${stamp}.csv`, text: [header.join(','), ...lines].join('\n') };
+  return { filename: `sentinel-log-${stamp}.csv`, text: [header.join(','), ...lines].join('\n') };
 }

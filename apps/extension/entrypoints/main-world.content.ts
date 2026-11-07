@@ -77,7 +77,7 @@ export default defineContentScript({
       if (typeof orig !== 'function' || !obj) return;
       const wrapped = function (this: unknown, ...args: unknown[]) {
         report(kind);
-        if (lockdown) return Promise.reject(new DOMException('Blocked by ScamShield', 'NotAllowedError'));
+        if (lockdown) return Promise.reject(new DOMException('Blocked by Sentinel', 'NotAllowedError'));
         return (orig as (...a: unknown[]) => unknown).apply(this, args);
       };
       Object.defineProperty(wrapped, 'toString', { value: () => Function.prototype.toString.call(orig) });
@@ -150,7 +150,7 @@ export default defineContentScript({
     // "ClickFix": a fake CAPTCHA copies a shell command, then says "press Win+R, Ctrl+V, Enter".
     // Swap the command for a harmless note before it reaches the clipboard.
     const SHELL_RE = /\b(powershell|pwsh|mshta|cmd(\.exe)?\s*\/c|rundll32|regsvr32|certutil|bitsadmin|wscript|cscript|msiexec|iex|invoke-expression|invoke-webrequest|frombase64string|curl\s.+\|\s*(ba|z)?sh|wget\s.+\|\s*(ba|z)?sh|osascript|base64\s+-d)\b/i;
-    const SAFE_TEXT = 'ScamShield removed a hidden command that this website tried to copy. Do not paste anything a website tells you to run.';
+    const SAFE_TEXT = 'Sentinel removed a hidden command that this website tried to copy. Do not paste anything a website tells you to run.';
     const isShell = (t: unknown) => typeof t === 'string' && SHELL_RE.test(t);
     const clip = (navigator as Navigator & { clipboard?: Clipboard }).clipboard;
     if (clip && typeof Clipboard !== 'undefined') {

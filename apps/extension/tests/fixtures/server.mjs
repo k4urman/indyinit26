@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 const FIX = dirname(fileURLToPath(import.meta.url));
 
 export const SITES = {
-  'start.scamshield.test': 'start.html',
+  'start.sentinel.test': 'start.html',
   'chase-secure-verify.com': 'chase-login.html',
   'usps-redelivery.top': 'usps-fee.html',
   'win-defender-alert.xyz': 'scareware.html',
