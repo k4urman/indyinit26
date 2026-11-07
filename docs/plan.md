@@ -1,8 +1,6 @@
-# ScamShield — Build Plan & Roadmap
+# Sentinel — Build Plan & Roadmap
 
 Cross-browser (Chrome, Edge, Firefox) extension that detects and blocks scam sites and scam behavior in real time, explains why, and keeps the user's data on their device.
-
-> Working name "ScamShield" — rename freely.
 
 ---
 
@@ -25,7 +23,7 @@ Cross-browser (Chrome, Edge, Firefox) extension that detects and blocks scam sit
 
 ## 1. Problem statement (final draft)
 
-**One-liner:** Scam pages do their damage in the first few hours, before blocklists know they exist — ScamShield gives every user a free, private, real-time second opinion at the exact moment they're about to pay, log in, upload, or download.
+**One-liner:** Scam pages do their damage in the first few hours, before blocklists know they exist — Sentinel gives every user a free, private, real-time second opinion at the exact moment they're about to pay, log in, upload, or download.
 
 Key facts behind it (sources in the team doc):
 - US consumers reported **$15.9B** in fraud losses in 2025 (FTC); FBI IC3 logged **$20.9B** across 1M+ complaints.
@@ -250,7 +248,7 @@ Privacy rules:
 ## 8. Repository structure
 
 ```
-scamshield/
+Sentinel/
 ├─ apps/extension/
 │  ├─ entrypoints/
 │  │  ├─ background.ts        # risk engine host, navigation, downloads, alarms
