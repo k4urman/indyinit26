@@ -24,22 +24,26 @@ import { LOGO_32 } from '@/src/ui/logo-b64';
 const CSS = `
 ${THEME_CSS}
 body { width: 380px; min-height: 540px; overflow-x: hidden; }
-.app { padding: 18px 16px 14px; display: grid; gap: 14px; }
-.head { display: flex; align-items: center; justify-content: space-between; }
-.logo { display: flex; align-items: center; gap: 7px; font-weight: 600; font-size: 17px; }
-.switch { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
-.track { position: relative; width: 51px; height: 31px; border-radius: 99px; background: var(--line); transition: background .2s; }
+.app { padding: 0 0 14px; display: grid; gap: 14px; }
+.head { display: flex; align-items: center; justify-content: space-between;
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  padding: 16px 16px 14px; border-radius: 0 0 18px 18px; }
+.logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 20px; color: #fff; }
+.logo img { filter: brightness(0) invert(1); }
+.switch { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: rgba(255,255,255,.8); }
+.track { position: relative; width: 51px; height: 31px; border-radius: 99px; background: rgba(255,255,255,.3); transition: background .2s; }
 .track[aria-checked="true"] { background: #34c759; }
-.knob { position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 3px 8px rgba(0,0,0,.15), 0 1px 1px rgba(0,0,0,.16); transition: left .2s; }
+.knob { position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 3px 8px rgba(0,0,0,.25); transition: left .2s; }
 .track[aria-checked="true"] .knob { left: 22px; }
 
-.hero { padding: 4px 2px 0; }
-.hero .n { font-size: 48px; font-weight: 600; letter-spacing: -.03em; line-height: 1; }
+.hero { padding: 4px 16px 0; }
+.hero .n { font-size: 48px; font-weight: 700; letter-spacing: -.03em; line-height: 1; color: var(--blue); }
 .hero .l { font-size: 15px; color: var(--muted); margin-top: 4px; }
-.hero .l b { color: var(--text); font-weight: 500; }
+.hero .l b { color: var(--text); font-weight: 600; }
 
-.group { border-radius: 12px; background: var(--surface); overflow: hidden; animation: appear .3s both; }
-.label { font-size: 13px; color: var(--muted); padding: 0 4px 6px; }
+.group { border-radius: 14px; background: var(--surface); overflow: hidden; animation: appear .3s both;
+  box-shadow: 0 1px 4px rgba(124,58,237,.08); border: 1px solid var(--line); margin: 0 16px; }
+.label { font-size: 13px; color: var(--muted); padding: 0 4px 6px; margin: 0 16px; }
 .site { display: grid; grid-template-columns: 34px 1fr; gap: 12px; align-items: center; padding: 14px; }
 .sym { width: 34px; height: 34px; }
 .sym.safe { color: var(--green); } .sym.caution { color: var(--orange); } .sym.danger { color: var(--red); } .sym.unknown { color: var(--dim); }
@@ -53,15 +57,16 @@ body { width: 380px; min-height: 540px; overflow-x: hidden; }
 .reasons li:last-child { border-bottom: 0; }
 .reasons b { display: block; color: var(--text); font-size: 14px; font-weight: 500; }
 .row { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line-soft); }
-.row button { min-height: 44px; font-size: 14px; color: var(--link); border-right: 1px solid var(--line-soft); }
+.row button { min-height: 44px; font-size: 14px; color: var(--link); border-right: 1px solid var(--line-soft); font-weight: 500; }
 .row button:last-child { border-right: 0; }
-.row button[aria-pressed="true"] { color: var(--text); font-weight: 600; }
+.row button[aria-pressed="true"] { color: var(--blue); font-weight: 700; }
 .row button:disabled { color: var(--dim); cursor: default; }
 .note { padding: 0 14px 12px; font-size: 12.5px; color: var(--muted); }
 
 .check { display: flex; gap: 8px; padding: 10px; }
-.check input { flex: 1; min-width: 0; height: 40px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); font-size: 15px; }
+.check input { flex: 1; min-width: 0; height: 40px; padding: 0 12px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--bg); font-size: 15px; }
 .check input::placeholder { color: var(--dim); }
+.check input:focus { border-color: var(--blue); outline: none; }
 .check .btn-primary { min-height: 40px; padding: 0 18px; }
 .result { margin: 0 10px 10px; padding: 10px 12px; border-radius: 10px; font-size: 13px; }
 .result.safe, .result.unknown { background: var(--green-tint); } .result.caution { background: var(--orange-tint); } .result.danger { background: var(--red-tint); }
@@ -77,8 +82,8 @@ body { width: 380px; min-height: 540px; overflow-x: hidden; }
 .events .a { font-size: 12px; color: var(--muted); }
 .events .t { grid-column: 1 / -1; color: var(--dim); font-size: 12px; }
 
-.foot { display: flex; align-items: center; justify-content: space-between; padding: 2px 4px 0; font-size: 12px; color: var(--dim); }
-.foot button { color: var(--link); font-size: 13px; }
+.foot { display: flex; align-items: center; justify-content: space-between; padding: 2px 20px 0; font-size: 12px; color: var(--dim); }
+.foot button { color: var(--link); font-size: 13px; font-weight: 500; }
 .off .hero, .off .group { opacity: .5; }
 `;
 
@@ -86,7 +91,7 @@ body { width: 380px; min-height: 540px; overflow-x: hidden; }
 // Icons
 // ---------------------------------------------------------------------------
 
-function Logo({ size = 20 }: { size?: number }) {
+function Logo({ size = 32 }: { size?: number }) {
   return <img src={LOGO_32} width={size} height={size} alt="" aria-hidden="true" style={{ display: 'block' }} />;
 }
 
